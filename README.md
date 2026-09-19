@@ -28,6 +28,8 @@ PostgreSQL
 
 Detailed diagrams live in `docs/architecture/`.
 
+![DevFlow system architecture](docs/architecture/diagrams/system-architecture.svg)
+
 ## Documentation
 
 - [Architecture](docs/architecture/overview.md)
