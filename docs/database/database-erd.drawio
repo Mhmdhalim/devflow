@@ -1,0 +1,134 @@
+<?xml version='1.0' encoding='utf-8'?>
+<mxfile host="app.diagrams.net" modified="2026-09-19T18:00:00.000Z" agent="ChatGPT" version="24.7.17">
+  <diagram id="devflow" name="03 Database ERD">
+    <mxGraphModel dx="2400" dy="1600" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="2400" pageHeight="1600" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" value="DevFlow — Database ERD" style="text;html=1;align=center;verticalAlign=middle;fontSize=28;fontStyle=1;" vertex="1" parent="1">
+          <mxGeometry x="550" y="20" width="1300" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" value="Spacious ERD: tables are grouped by business domain and foreign-key relationships are easier to follow." style="text;html=1;align=center;verticalAlign=middle;fontSize=14;fontColor=#666666;" vertex="1" parent="1">
+          <mxGeometry x="500" y="75" width="1400" height="35" as="geometry" />
+        </mxCell>
+        <mxCell id="sa" value="#Auth / Users" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontStyle=1;fontSize=16;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="60" y="140" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="so" value="#Organizations" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontStyle=1;fontSize=16;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="610" y="140" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="sp" value="#Projects" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontStyle=1;fontSize=16;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="1160" y="140" width="480" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="si" value="#Issues / Collaboration" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#94a3b8;fontStyle=1;fontSize=16;align=left;spacingLeft=12;" vertex="1" parent="1">
+          <mxGeometry x="1710" y="140" width="600" height="50" as="geometry" />
+        </mxCell>
+        <mxCell id="users" value="#Table #Auth&#10;users&#10;PK id&#10;email UNIQUE&#10;password_hash&#10;display_name&#10;status&#10;created_at&#10;updated_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontColor=#14532d;fontSize=12;align=left;verticalAlign=middle;fontStyle=1;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="120" y="240" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="tokens" value="#Table #Auth&#10;refresh_tokens&#10;PK id&#10;FK user_id → users.id&#10;token_hash UNIQUE&#10;expires_at&#10;revoked_at&#10;created_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dcfce7;strokeColor=#16a34a;fontColor=#14532d;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="120" y="540" width="360" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="orgs" value="#Table #Organization&#10;organizations&#10;PK id&#10;FK owner_id → users.id&#10;name&#10;slug UNIQUE&#10;created_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#1e3a8a;fontSize=12;align=left;verticalAlign=middle;fontStyle=1;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="670" y="240" width="360" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="orgmem" value="#Table #Membership&#10;organization_members&#10;PK id&#10;FK organization_id → organizations.id&#10;FK user_id → users.id&#10;role&#10;joined_at&#10;UNIQUE(org,user)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dbeafe;strokeColor=#2563eb;fontColor=#1e3a8a;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="670" y="540" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="projects" value="#Table #Project&#10;projects&#10;PK id&#10;FK organization_id → organizations.id&#10;name&#10;key UNIQUE per org&#10;description&#10;status&#10;created_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;fontColor=#2e1065;fontSize=12;align=left;verticalAlign=middle;fontStyle=1;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="240" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="projmem" value="#Table #Membership&#10;project_members&#10;PK id&#10;FK project_id → projects.id&#10;FK user_id → users.id&#10;role&#10;UNIQUE(project,user)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;fontColor=#2e1065;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="540" width="360" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="labels" value="#Table #Project&#10;labels&#10;PK id&#10;FK project_id → projects.id&#10;name&#10;color&#10;UNIQUE(project,name)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ede9fe;strokeColor=#7c3aed;fontColor=#2e1065;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="830" width="360" height="160" as="geometry" />
+        </mxCell>
+        <mxCell id="issues" value="#Table #Issue&#10;issues&#10;PK id&#10;FK project_id → projects.id&#10;FK reporter_id → users.id&#10;title&#10;description&#10;type&#10;status&#10;priority&#10;created_at&#10;updated_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#dc2626;fontColor=#7f1d1d;fontSize=12;align=left;verticalAlign=middle;fontStyle=1;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="230" width="420" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="assignees" value="#Table #Issue&#10;issue_assignees&#10;FK issue_id → issues.id&#10;FK user_id → users.id&#10;PK(issue_id,user_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#dc2626;fontColor=#7f1d1d;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="550" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="issuelabels" value="#Table #Issue&#10;issue_labels&#10;FK issue_id → issues.id&#10;FK label_id → labels.id&#10;PK(issue_id,label_id)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fee2e2;strokeColor=#dc2626;fontColor=#7f1d1d;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="770" width="420" height="140" as="geometry" />
+        </mxCell>
+        <mxCell id="comments" value="#Table #Collaboration&#10;comments&#10;PK id&#10;FK issue_id → issues.id&#10;FK author_id → users.id&#10;body&#10;created_at&#10;updated_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fef3c7;strokeColor=#d97706;fontColor=#78350f;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="1000" width="420" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="attachments" value="#Table #Storage&#10;attachments&#10;PK id&#10;FK issue_id → issues.id&#10;FK uploaded_by → users.id&#10;storage_key&#10;filename&#10;content_type&#10;size_bytes" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3f4f6;strokeColor=#6b7280;fontColor=#111827;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1780" y="1250" width="420" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="notifications" value="#Table #Notification&#10;notifications&#10;PK id&#10;FK user_id → users.id&#10;type&#10;payload JSONB&#10;read_at&#10;created_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#fce7f3;strokeColor=#db2777;fontColor=#831843;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="1220" y="1100" width="360" height="170" as="geometry" />
+        </mxCell>
+        <mxCell id="audit" value="#Table #Audit&#10;audit_logs&#10;PK id&#10;FK actor_id → users.id&#10;entity_type&#10;entity_id&#10;action&#10;metadata JSONB&#10;created_at" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f3f4f6;strokeColor=#6b7280;fontColor=#111827;fontSize=12;align=left;verticalAlign=middle;fontStyle=0;shadow=1;spacing=8;" vertex="1" parent="1">
+          <mxGeometry x="670" y="1100" width="360" height="190" as="geometry" />
+        </mxCell>
+        <mxCell id="legend" value="COLOR / HASHTAG LEGEND&#10;🟩 #Auth = identity + tokens&#10;🔵 #Organization = organizations + membership&#10;🟣 #Project = project-scoped data&#10;🟥 #Issue = core work items&#10;🟨 #Collaboration = comments&#10;🩷 #Notification = user notifications&#10;⚪ #Audit / #Storage = operational data&#10;&#10;PK = Primary Key   FK = Foreign Key" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffffff;strokeColor=#64748b;fontSize=12;align=left;spacingLeft=12;shadow=1;" vertex="1" parent="1">
+          <mxGeometry x="70" y="950" width="470" height="300" as="geometry" />
+        </mxCell>
+        <mxCell id="r1" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="tokens">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r2" value="owner" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="orgs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r3" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="orgs" target="orgmem">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r4" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="orgmem">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r5" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="orgs" target="projects">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r6" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="projects" target="projmem">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r7" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="projmem">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r8" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="projects" target="labels">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r9" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="projects" target="issues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r10" value="reporter" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="issues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r11" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="issues" target="assignees">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r12" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="assignees">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r13" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="issues" target="issuelabels">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r14" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="labels" target="issuelabels">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r15" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="issues" target="comments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r16" value="author" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="comments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r17" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="issues" target="attachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r18" value="uploader" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="attachments">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r19" value="1:N" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="notifications">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="r20" value="actor" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;endArrow=ERmany;startArrow=ERone;endFill=1;startFill=1;fontSize=11;strokeWidth=1.5;" edge="1" parent="1" source="users" target="audit">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
