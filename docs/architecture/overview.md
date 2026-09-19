@@ -32,10 +32,10 @@ Later phases add Redis, background workers, object storage, observability, and C
 
 ## System architecture
 
-![DevFlow system architecture](diagrams/system-architecture.svg)
+![DevFlow system architecture](diagrams/01-system-architecture.png)
 
 ## API to database flow
 
-![DevFlow API to database flow](diagrams/api-database-flow.svg)
+![DevFlow API to database flow](diagrams/02-api-database-flow.png)
 
-The editable source files remain available beside each SVG as `.drawio` files.
+The editable source files remain available beside each PNG as `.drawio` files.
