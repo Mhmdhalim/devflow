@@ -29,3 +29,10 @@ DevFlow uses PostgreSQL as its primary persistent data store.
 - `audit_logs`
 
 Foreign keys preserve relational integrity, join tables represent many-to-many relationships, and indexes will be added based on real access patterns and measured query needs.
+
+
+## Entity relationship diagram
+
+![DevFlow database ERD](03-database-erd.png)
+
+The editable source is stored in `database-erd.drawio`, and the DBML schema is stored in `schema.dbml`.
