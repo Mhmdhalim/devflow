@@ -20,6 +20,6 @@ Backlog
 
 ## Visual workflow
 
-![DevFlow engineering workflow](engineering-workflow.svg)
+![DevFlow engineering workflow](04-engineering-workflow.png)
 
 The editable source is stored in `engineering-workflow.drawio`.
