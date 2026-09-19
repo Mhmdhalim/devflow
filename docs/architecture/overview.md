@@ -28,3 +28,14 @@ PostgreSQL
 - **PostgreSQL** is the persistent source of truth.
 
 Later phases add Redis, background workers, object storage, observability, and CI/CD.
+
+
+## System architecture
+
+![DevFlow system architecture](diagrams/system-architecture.svg)
+
+## API to database flow
+
+![DevFlow API to database flow](diagrams/api-database-flow.svg)
+
+The editable source files remain available beside each SVG as `.drawio` files.
