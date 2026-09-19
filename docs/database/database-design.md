@@ -33,6 +33,6 @@ Foreign keys preserve relational integrity, join tables represent many-to-many r
 
 ## Entity relationship diagram
 
-![DevFlow database ERD](database-erd.svg)
+![DevFlow database ERD](03-database-erd.png)
 
 The editable source is stored in `database-erd.drawio`, and the DBML schema is stored in `schema.dbml`.
