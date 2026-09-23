@@ -43,6 +43,7 @@ def test_get_by_id() -> None:
     assert result is expected_user
     db.get.assert_called_once_with(User, user_id)
 
+
 def test_get_by_email() -> None:
     db = MagicMock()
     repository = UserRepository(db)
