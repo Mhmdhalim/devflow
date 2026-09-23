@@ -7,6 +7,7 @@ class Settings(BaseSettings):
     app_name: str = "DevFlow API"
     app_env: str = "development"
     app_debug: bool = True
+    database_url: str
 
     model_config = SettingsConfigDict(
         env_file=".env",
