@@ -152,3 +152,38 @@ Expected output:
 ```text
 1
 ```
+## Database Migrations
+
+DevFlow uses Alembic to manage PostgreSQL schema changes.
+
+Create a new migration:
+
+```bash
+uv run alembic revision -m "migration description"
+```
+
+Create a migration automatically from SQLAlchemy model changes:
+
+```bash
+uv run alembic revision --autogenerate -m "migration description"
+```
+
+Apply all pending migrations:
+
+```bash
+uv run alembic upgrade head
+```
+
+Show the current database revision:
+
+```bash
+uv run alembic current
+```
+
+Rollback one migration:
+
+```bash
+uv run alembic downgrade -1
+```
+
+Alembic reads the database URL from the same application settings used by the FastAPI backend.
