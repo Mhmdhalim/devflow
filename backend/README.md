@@ -114,3 +114,41 @@ uv run mypy app
 ```
 
 All checks should pass before opening a Pull Request.
+
+## PostgreSQL
+
+DevFlow uses PostgreSQL for persistent application data.
+
+Start the local PostgreSQL container:
+
+```bash
+docker start devflow-postgres
+```
+
+Check that it is running:
+
+```bash
+docker ps
+```
+
+The backend reads the database connection from `backend/.env`.
+
+Example:
+
+```env
+DATABASE_URL=postgresql+psycopg://devflow:change_me@localhost:5432/devflow
+```
+
+Do not commit the real `.env` file. Use `.env.example` as the shared configuration template.
+
+To verify the database connection:
+
+```bash
+uv run python -c "from sqlalchemy import text; from app.db.session import engine; conn = engine.connect(); print(conn.execute(text('SELECT 1')).scalar()); conn.close()"
+```
+
+Expected output:
+
+```text
+1
+```
