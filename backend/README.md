@@ -190,3 +190,27 @@ Install the Git hooks:
 
 ```bash
 uv run pre-commit install
+```
+
+Run all hooks manually:
+
+```bash
+uv run pre-commit run --all-files
+```
+
+The hooks run Ruff linting and formatting, mypy, and pytest before commits.
+
+## Continuous Integration
+
+GitHub Actions automatically runs the backend quality checks on pull requests and on pushes to `main`.
+
+The CI workflow runs:
+
+```text
+pytest
+ruff check
+ruff format --check
+mypy
+```
+
+This provides an independent remote verification of the same core checks used during local development.
