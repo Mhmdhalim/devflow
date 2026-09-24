@@ -6,6 +6,7 @@ Backend API for **DevFlow**, built with FastAPI.
 
 * Python 3.12
 * uv
+* Docker
 
 ## Setup
 
@@ -85,24 +86,6 @@ uv run ruff format .
 uv run mypy app
 ```
 
-## Project Structure
-
-```text
-backend/
-├── app/
-│   ├── api/
-│   │   └── routes/
-│   │       └── health.py
-│   ├── core/
-│   │   └── config.py
-│   └── main.py
-├── tests/
-│   └── test_health.py
-├── pyproject.toml
-├── uv.lock
-└── README.md
-```
-
 ## Development Checks
 
 Before committing changes, run:
@@ -115,31 +98,43 @@ uv run mypy app
 
 All checks should pass before opening a Pull Request.
 
-## PostgreSQL
+## PostgreSQL with Docker Compose
 
 DevFlow uses PostgreSQL for persistent application data.
 
-Start the local PostgreSQL container:
+From the repository root, start the local PostgreSQL service:
 
 ```bash
-docker start devflow-postgres
+docker compose up -d
 ```
 
-Check that it is running:
+Check the service status:
 
 ```bash
-docker ps
+docker compose ps
 ```
 
-The backend reads the database connection from `backend/.env`.
+View PostgreSQL logs:
+
+```bash
+docker compose logs postgres
+```
+
+Stop the local infrastructure:
+
+```bash
+docker compose down
+```
+
+PostgreSQL data is persisted in the named Docker volume `devflow_pgdata`. Running `docker compose down` keeps this volume. Running `docker compose down -v` also removes the volume and should only be used when intentionally resetting local database data.
+
+The backend reads database configuration from `backend/.env`. Do not commit the real `.env` file; use `backend/.env.example` as the shared template.
 
 Example:
 
 ```env
 DATABASE_URL=postgresql+psycopg://devflow:change_me@localhost:5432/devflow
 ```
-
-Do not commit the real `.env` file. Use `.env.example` as the shared configuration template.
 
 To verify the database connection:
 
@@ -152,6 +147,7 @@ Expected output:
 ```text
 1
 ```
+
 ## Database Migrations
 
 DevFlow uses Alembic to manage PostgreSQL schema changes.
