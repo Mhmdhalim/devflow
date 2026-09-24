@@ -75,9 +75,7 @@ def test_create_user_with_existing_email() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 409
-    assert response.json() == {
-        "detail": "User with this email already exists"
-    }
+    assert response.json() == {"detail": "User with this email already exists"}
 
 
 def test_get_user() -> None:
