@@ -183,3 +183,10 @@ uv run alembic downgrade -1
 ```
 
 Alembic reads the database URL from the same application settings used by the FastAPI backend.
+
+## Pre-commit
+
+Install the Git hooks:
+
+```bash
+uv run pre-commit install
