@@ -15,7 +15,11 @@ def test_health_check() -> None:
 
 
 def test_readiness_check() -> None:
-    response = client.get("/ready")
+    with patch(
+        "app.api.routes.health.database_is_ready",
+        return_value=True,
+    ):
+        response = client.get("/ready")
 
     assert response.status_code == 200
     assert response.json() == {"status": "ready"}
