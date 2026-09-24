@@ -34,6 +34,7 @@ def make_user(
 
     return user
 
+
 def test_create_user() -> None:
     service = MagicMock()
     user = make_user()
@@ -56,6 +57,7 @@ def test_create_user() -> None:
     assert response.json()["email"] == "alice@example.com"
     assert response.json()["full_name"] == "Alice Johnson"
 
+
 def test_create_user_with_existing_email() -> None:
     service = MagicMock()
     service.create_user.side_effect = UserAlreadyExistsError
@@ -76,7 +78,8 @@ def test_create_user_with_existing_email() -> None:
     assert response.json() == {
         "detail": "User with this email already exists"
     }
-    
+
+
 def test_get_user() -> None:
     service = MagicMock()
     user = make_user()
@@ -93,6 +96,7 @@ def test_get_user() -> None:
     assert response.json()["id"] == str(user.id)
     assert response.json()["email"] == user.email
 
+
 def test_get_missing_user() -> None:
     service = MagicMock()
     user_id = uuid.uuid4()
@@ -107,6 +111,7 @@ def test_get_missing_user() -> None:
 
     assert response.status_code == 404
     assert response.json() == {"detail": "User not found"}
+
 
 def test_list_users() -> None:
     service = MagicMock()
