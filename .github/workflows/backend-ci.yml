@@ -17,6 +17,9 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
+    env:
+      DATABASE_URL: postgresql+psycopg://devflow:test@localhost:5432/devflow
+
     defaults:
       run:
         working-directory: backend
