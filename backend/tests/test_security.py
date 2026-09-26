@@ -1,4 +1,12 @@
-from app.core.security import hash_password, verify_password
+import jwt
+
+from app.core.config import get_settings
+from app.core.security import (
+    ALGORITHM,
+    create_access_token,
+    hash_password,
+    verify_password,
+)
 
 
 def test_hash_password() -> None:
@@ -26,3 +34,18 @@ def test_verify_wrong_password() -> None:
         )
         is False
     )
+
+
+def test_create_access_token() -> None:
+    settings = get_settings()
+
+    token = create_access_token("user-123")
+
+    payload = jwt.decode(
+        token,
+        settings.secret_key,
+        algorithms=[ALGORITHM],
+    )
+
+    assert payload["sub"] == "user-123"
+    assert "exp" in payload
