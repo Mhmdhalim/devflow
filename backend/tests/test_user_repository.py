@@ -13,12 +13,17 @@ def test_create_user() -> None:
     data = UserCreate(
         email="alice@example.com",
         full_name="Alice Johnson",
+        password="secure-password-123",
     )
 
-    user = repository.create(data)
+    user = repository.create(
+        data,
+        "hashed-password-value",
+    )
 
     assert user.email == "alice@example.com"
     assert user.full_name == "Alice Johnson"
+    assert user.hashed_password == "hashed-password-value"
 
     db.add.assert_called_once_with(user)
     db.commit.assert_called_once()

@@ -41,3 +41,6 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
     )
+    hashed_password: Mapped[str] = mapped_column(
+        String(255),
+    )

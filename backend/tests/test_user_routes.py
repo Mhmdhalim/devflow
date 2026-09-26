@@ -48,6 +48,7 @@ def test_create_user() -> None:
         json={
             "email": "alice@example.com",
             "full_name": "Alice Johnson",
+            "password": "secure-password-123",
         },
     )
 
@@ -56,6 +57,11 @@ def test_create_user() -> None:
     assert response.status_code == 201
     assert response.json()["email"] == "alice@example.com"
     assert response.json()["full_name"] == "Alice Johnson"
+
+    body = response.json()
+
+    assert "password" not in body
+    assert "hashed_password" not in body
 
 
 def test_create_user_with_existing_email() -> None:
@@ -69,6 +75,7 @@ def test_create_user_with_existing_email() -> None:
         json={
             "email": "alice@example.com",
             "full_name": "Alice Johnson",
+            "password": "secure-password-123",
         },
     )
 
