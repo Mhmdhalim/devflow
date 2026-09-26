@@ -4,6 +4,7 @@ from app.core.config import get_settings
 from app.core.security import (
     ALGORITHM,
     create_access_token,
+    decode_access_token,
     hash_password,
     verify_password,
 )
@@ -49,3 +50,11 @@ def test_create_access_token() -> None:
 
     assert payload["sub"] == "user-123"
     assert "exp" in payload
+
+
+def test_decode_access_token() -> None:
+    token = create_access_token("user-123")
+
+    subject = decode_access_token(token)
+
+    assert subject == "user-123"
