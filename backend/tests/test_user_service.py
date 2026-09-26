@@ -3,6 +3,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from app.core.security import verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate
 from app.services.user import (
@@ -19,6 +20,7 @@ def test_create_user() -> None:
     data = UserCreate(
         email="alice@example.com",
         full_name="Alice Johnson",
+        password="secure-password-123",
     )
 
     expected_user = User(
@@ -31,9 +33,24 @@ def test_create_user() -> None:
 
     result = service.create_user(data)
 
-    assert result is expected_user
     repository.get_by_email.assert_called_once_with("alice@example.com")
-    repository.create.assert_called_once_with(data)
+
+    repository.create.assert_called_once()
+
+    call_args = repository.create.call_args
+
+    passed_data = call_args.args[0]
+    passed_hash = call_args.args[1]
+
+    assert passed_data == data
+    assert passed_hash != data.password
+
+    assert verify_password(
+        data.password,
+        passed_hash,
+    )
+
+    assert result is expected_user
 
 
 def test_create_user_with_existing_email() -> None:
@@ -43,6 +60,7 @@ def test_create_user_with_existing_email() -> None:
     data = UserCreate(
         email="alice@example.com",
         full_name="Alice Johnson",
+        password="secure-password-123",
     )
 
     repository.get_by_email.return_value = User(

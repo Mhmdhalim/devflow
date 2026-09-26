@@ -11,10 +11,15 @@ class UserRepository:
     def __init__(self, db: Session) -> None:
         self.db = db
 
-    def create(self, data: UserCreate) -> User:
+    def create(
+        self,
+        data: UserCreate,
+        hashed_password: str,
+    ) -> User:
         user = User(
             email=str(data.email),
             full_name=data.full_name,
+            hashed_password=hashed_password,
         )
 
         self.db.add(user)
