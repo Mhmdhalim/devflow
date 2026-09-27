@@ -17,6 +17,23 @@ jobs:
   backend:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:18
+
+        env:
+          POSTGRES_USER: devflow
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: devflow
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U devflow -d devflow"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
     env:
       DATABASE_URL: postgresql+psycopg://devflow:test@localhost:5432/devflow
       SECRET_KEY: test-secret-key-for-ci-only
@@ -37,7 +54,10 @@ jobs:
 
       - name: Install dependencies
         run: uv sync --locked --dev
-
+      
+      - name: Run database migrations
+        run: uv run alembic upgrade head
+        
       - name: Run tests
         run: uv run pytest
 
