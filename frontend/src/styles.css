@@ -228,3 +228,41 @@ button { cursor: pointer; }
   .project-toolbar { align-items: stretch; flex-direction: column; }.filter-control { width: 100%; }
   .modal-backdrop { padding: 10px; }.modal-card { max-height: calc(100vh - 20px); border-radius: 12px; }
 }
+
+
+.workspace-actions { display: flex; gap: 8px; align-items: center; }
+.team-grid { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(320px, .95fr); gap: 18px; align-items: start; }
+.team-card { background: white; border: 1px solid var(--line); border-radius: 16px; padding: 20px; box-shadow: 0 2px 6px rgba(16,24,40,.025); }
+.team-card .section-heading { margin-bottom: 18px; }
+.team-card .section-heading h2 { font-size: 16px; }
+.member-list, .pending-list { display: grid; gap: 9px; }
+.member-row, .pending-row { display: flex; align-items: center; gap: 11px; padding: 11px 12px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-soft); }
+.member-copy, .pending-row > div { min-width: 0; flex: 1; }
+.member-copy strong, .member-copy span, .pending-row strong, .pending-row span { display: block; }
+.member-copy strong, .pending-row strong { font-size: 12px; }
+.member-copy span, .pending-row span { margin-top: 3px; color: var(--muted); font-size: 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.member-role { text-transform: capitalize; border-radius: 999px; background: var(--brand-soft); color: var(--brand-dark); padding: 5px 8px; font-size: 10px; font-weight: 800; }
+.invite-box { margin-top: 18px; border: 1px solid #d6bbfb; background: #f9f5ff; border-radius: 12px; padding: 14px; }
+.invite-box > strong { font-size: 12px; }
+.invite-box > p { color: var(--muted); font-size: 11px; margin: 5px 0 10px; }
+.invite-link-row { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 8px; }
+.invite-link-row input { min-width: 0; border: 1px solid #d0d5dd; border-radius: 9px; padding: 9px 10px; color: #475467; background: white; font-size: 11px; }
+.pending-block { border-top: 1px solid var(--line); margin-top: 20px; padding-top: 18px; }
+.pending-block h3 { margin: 0 0 11px; font-size: 12px; }
+.invite-accept-card { width: min(620px, 100%); background: white; border: 1px solid var(--line); border-radius: 16px; padding: 28px; box-shadow: var(--shadow); }
+.invite-accept-card h2 { margin: 8px 0 12px; font-size: 26px; letter-spacing: -0.035em; }
+.invite-accept-card p { color: #475467; line-height: 1.6; }
+.invite-accept-card .button { margin-top: 8px; }
+
+@media (max-width: 820px) {
+  .team-grid { grid-template-columns: 1fr; }
+  .workspace-header { align-items: flex-start; }
+  .workspace-actions { flex-wrap: wrap; justify-content: flex-end; }
+}
+
+@media (max-width: 560px) {
+  .workspace-header { flex-direction: column; }
+  .workspace-actions { width: 100%; }
+  .workspace-actions .button { flex: 1; }
+  .invite-link-row { grid-template-columns: 1fr; }
+}
