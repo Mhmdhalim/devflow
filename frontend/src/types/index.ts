@@ -1,5 +1,6 @@
 export type IssueStatus = "todo" | "in_progress" | "done";
 export type IssuePriority = "low" | "medium" | "high";
+export type InvitationRole = "admin" | "member";
 
 export interface User {
   id: string;
@@ -22,6 +23,34 @@ export interface Organization {
   role: string;
   created_at: string;
   updated_at: string;
+}
+
+export interface OrganizationMember {
+  user_id: string;
+  email: string;
+  full_name: string;
+  role: string;
+  joined_at: string;
+}
+
+export interface OrganizationInvitation {
+  id: string;
+  organization_id: string;
+  email: string;
+  role: InvitationRole;
+  invited_by_id: string;
+  expires_at: string;
+  accepted_at: string | null;
+  created_at: string;
+}
+
+export interface OrganizationInvitationCreated extends OrganizationInvitation {
+  token: string;
+}
+
+export interface OrganizationInvitationDetail extends OrganizationInvitation {
+  organization_name: string;
+  organization_slug: string;
 }
 
 export interface Project {
