@@ -1,67 +1,65 @@
 # Architecture Overview
 
-DevFlow backend v1 is implemented as a **modular monolith**.
+DevFlow is implemented as a **modular monolith** with a separate React browser client.
 
-## Why a modular monolith?
-
-The application has clear domain boundaries but does not require independently deployable services.
-
-This keeps deployment and local development simple while preserving separation between:
-
-- authentication
-- users
-- organizations and memberships
-- projects
-- issues
-- comments
-- labels
-
-## Backend layering
+## System shape
 
 ```text
-HTTP Request
-    ↓
-Router
-    ↓
-Schema Validation
-    ↓
-Service
-    ↓
-Repository
-    ↓
+Browser
+  ↓
+React + TypeScript
+  ↓
+HTTP / JSON
+  ↓
+FastAPI
+  ↓
+Router → Schema Validation → Service → Repository
+  ↓
 SQLAlchemy
-    ↓
+  ↓
 PostgreSQL
 ```
 
-- **Router** owns HTTP concerns.
-- **Schema validation** validates request and response data with Pydantic.
-- **Service** owns business rules and use-case orchestration.
-- **Repository** owns persistence operations.
+The backend keeps domain boundaries explicit without splitting them into independently deployed microservices.
+
+## Backend domains
+
+- authentication and users
+- organizations and memberships
+- organization invitations
+- projects
+- issues and assignees
+- comments
+- labels and issue-label assignments
+
+## Layer responsibilities
+
+- **Router** owns HTTP concerns and error/status mapping.
+- **Schema validation** validates external request/response data with Pydantic.
+- **Service** owns authorization, business rules, and use-case orchestration.
+- **Repository** owns database queries and persistence.
 - **SQLAlchemy** maps application models to relational persistence.
 - **PostgreSQL** is the persistent source of truth.
 
+Authorization is enforced in backend services. The frontend never acts as the security boundary.
+
 ## Runtime and delivery
 
-The FastAPI application and PostgreSQL database can run together through Docker Compose.
+Local Docker Compose runs PostgreSQL, FastAPI, and the Nginx-served React frontend as a full stack.
 
-GitHub Actions validates backend changes with:
+GitHub Actions validates changes with three layers:
 
-- PostgreSQL 18
-- Alembic migrations
-- pytest
-- PostgreSQL integration testing
-- Ruff linting and formatting
-- mypy
+- Backend CI: migrations, pytest, PostgreSQL integration, Ruff, mypy
+- E2E CI: browser workflows against FastAPI + PostgreSQL
+- Container CI: production-style Docker/Nginx routing, SPA deep links, readiness, and migration heads
 
 ## Future scope
 
-The following capabilities are intentionally outside backend v1:
+The following capabilities remain intentionally outside the current version:
 
-- Redis
-- background workers
+- Redis and background workers
 - object storage and attachments
-- notifications
+- outbound email delivery
 - audit logs
 - advanced search and pagination
 
@@ -73,4 +71,4 @@ The following capabilities are intentionally outside backend v1:
 
 ![DevFlow API to database flow](diagrams/02-api-database-flow.svg)
 
-The editable source files remain available beside each SVG as `.drawio` files.
+Editable diagram sources remain beside the SVG files as `.drawio` files.
