@@ -12,7 +12,10 @@ from app.schemas.invitation import OrganizationInvitationCreate
 from app.services.organization_access import (
     OrganizationAccessPermissionDeniedError,
     OrganizationAccessService,
+    OrganizationInvitationAlreadyAcceptedError,
+    OrganizationInvitationAlreadyExistsError,
     OrganizationInvitationEmailMismatchError,
+    OrganizationInvitationExpiredError,
     OrganizationMemberAlreadyExistsError,
 )
 
@@ -337,3 +340,81 @@ def test_accept_invitation_by_id() -> None:
     assert result_organization is organization
     assert result_membership is expected_membership
     invitation_repository.accept.assert_called_once()
+
+
+def test_create_invitation_rejects_duplicate_pending_invite() -> None:
+    (
+        service,
+        invitation_repository,
+        membership_repository,
+        organization_repository,
+        user_repository,
+    ) = make_service()
+
+    organization = make_organization()
+    inviter_id = uuid.uuid4()
+    organization_repository.get_by_id.return_value = organization
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=inviter_id,
+        organization_id=organization.id,
+        role="owner",
+    )
+    user_repository.get_by_email.return_value = None
+    invitation_repository.get_pending_for_email.return_value = make_invitation(
+        organization.id
+    )
+
+    with pytest.raises(OrganizationInvitationAlreadyExistsError):
+        service.create_invitation(
+            organization_id=organization.id,
+            inviter_id=inviter_id,
+            data=OrganizationInvitationCreate(email="member@example.com"),
+        )
+
+    invitation_repository.create.assert_not_called()
+
+
+def test_get_invitation_rejects_expired_invitation() -> None:
+    (
+        service,
+        invitation_repository,
+        _,
+        organization_repository,
+        _,
+    ) = make_service()
+
+    organization = make_organization()
+    invitation = make_invitation(organization.id)
+    invitation.expires_at = datetime.now(UTC) - timedelta(seconds=1)
+    invitation_repository.get_by_token_hash.return_value = invitation
+
+    with pytest.raises(OrganizationInvitationExpiredError):
+        service.get_invitation(
+            token="invite-token",
+            user_email="member@example.com",
+        )
+
+    organization_repository.get_by_id.assert_not_called()
+
+
+def test_get_invitation_rejects_already_accepted_invitation() -> None:
+    (
+        service,
+        invitation_repository,
+        _,
+        organization_repository,
+        _,
+    ) = make_service()
+
+    organization = make_organization()
+    invitation = make_invitation(organization.id)
+    invitation.accepted_at = datetime.now(UTC)
+    invitation_repository.get_by_token_hash.return_value = invitation
+
+    with pytest.raises(OrganizationInvitationAlreadyAcceptedError):
+        service.get_invitation(
+            token="invite-token",
+            user_email="member@example.com",
+        )
+
+    organization_repository.get_by_id.assert_not_called()
