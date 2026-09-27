@@ -51,3 +51,13 @@ class IssueRepository:
         self.db.refresh(issue)
 
         return issue
+
+    def list_for_project(
+        self,
+        project_id: uuid.UUID,
+    ) -> list[Issue]:
+        statement = (
+            select(Issue).where(Issue.project_id == project_id).order_by(Issue.number)
+        )
+
+        return list(self.db.scalars(statement).all())
