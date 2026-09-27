@@ -54,3 +54,12 @@ class ProjectRepository:
             .order_by(Project.created_at)
         )
         return list(self.db.scalars(statement).all())
+
+    def get_by_id(
+        self,
+        project_id: uuid.UUID,
+    ) -> Project | None:
+        return self.db.get(
+            Project,
+            project_id,
+        )
