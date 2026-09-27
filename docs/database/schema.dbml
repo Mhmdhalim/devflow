@@ -33,6 +33,26 @@ Table memberships {
   Note: 'role is constrained to owner, admin, or member'
 }
 
+Table organization_invitations {
+  id uuid [pk, not null]
+  organization_id uuid [not null, ref: > organizations.id]
+  email varchar(320) [not null]
+  role varchar(20) [not null, default: 'member']
+  token_hash varchar(64) [not null, unique]
+  invited_by_id uuid [not null, ref: > users.id]
+  expires_at timestamptz [not null]
+  accepted_at timestamptz
+  created_at timestamptz [not null, default: `now()`]
+
+  indexes {
+    organization_id
+    email
+    token_hash [unique]
+  }
+
+  Note: 'role is constrained to admin or member; organization_id uses ON DELETE CASCADE'
+}
+
 Table projects {
   id uuid [pk, not null]
   organization_id uuid [not null, ref: > organizations.id]
