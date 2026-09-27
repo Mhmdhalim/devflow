@@ -6,6 +6,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.comments import router as comments_router
 from app.api.routes.health import router as health_router
 from app.api.routes.issues import router as issues_router
+from app.api.routes.labels import router as labels_router
 from app.api.routes.organizations import (
     router as organizations_router,
 )
@@ -36,3 +37,4 @@ app.include_router(organizations_router)
 app.include_router(projects_router)
 app.include_router(issues_router)
 app.include_router(comments_router)
+app.include_router(labels_router)
