@@ -78,3 +78,44 @@ def create_comment(
         ) from exc
 
     return CommentRead.model_validate(comment)
+
+
+@router.get(
+    "",
+    response_model=list[CommentRead],
+)
+def list_comments(
+    project_id: uuid.UUID,
+    issue_number: int,
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+    service: CommentService = Depends(get_comment_service),
+) -> list[CommentRead]:
+    try:
+        comments = service.list_comments(
+            project_id=project_id,
+            issue_number=issue_number,
+            user_id=current_user.id,
+        )
+
+    except CommentProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from exc
+
+    except CommentPermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this project",
+        ) from exc
+
+    except CommentIssueNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Issue not found",
+        ) from exc
+
+    return [CommentRead.model_validate(comment) for comment in comments]

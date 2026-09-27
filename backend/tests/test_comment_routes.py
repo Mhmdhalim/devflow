@@ -195,3 +195,120 @@ def test_create_comment_rejects_empty_body() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 422
+
+
+def test_list_comments() -> None:
+    service = MagicMock()
+    user = make_user()
+
+    project_id = uuid.uuid4()
+    issue_id = uuid.uuid4()
+
+    first = make_comment(
+        issue_id=issue_id,
+        author_id=user.id,
+    )
+    first.body = "First comment"
+
+    second = make_comment(
+        issue_id=issue_id,
+        author_id=user.id,
+    )
+    second.body = "Second comment"
+
+    service.list_comments.return_value = [
+        first,
+        second,
+    ]
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12/comments")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert len(body) == 2
+    assert body[0]["body"] == "First comment"
+    assert body[1]["body"] == "Second comment"
+
+    service.list_comments.assert_called_once_with(
+        project_id=project_id,
+        issue_number=12,
+        user_id=user.id,
+    )
+
+
+def test_list_comments_requires_authentication() -> None:
+    service = MagicMock()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12/comments")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    service.list_comments.assert_not_called()
+
+
+def test_list_comments_forbidden() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.list_comments.side_effect = CommentPermissionDeniedError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12/comments")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+def test_list_comments_when_project_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.list_comments.side_effect = CommentProjectNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12/comments")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Project not found")
+
+
+def test_list_comments_when_issue_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.list_comments.side_effect = CommentIssueNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/99/comments")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Issue not found")
