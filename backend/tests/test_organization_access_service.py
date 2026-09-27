@@ -282,3 +282,58 @@ def test_list_members_requires_membership() -> None:
         )
 
     membership_repository.list_for_organization.assert_not_called()
+
+
+def test_list_user_invitations_returns_organizations() -> None:
+    (
+        service,
+        invitation_repository,
+        _,
+        organization_repository,
+        _,
+    ) = make_service()
+
+    organization = make_organization()
+    invitation = make_invitation(organization.id)
+    invitation_repository.list_pending_for_email.return_value = [invitation]
+    organization_repository.get_by_id.return_value = organization
+
+    result = service.list_user_invitations(user_email=" Member@Example.com ")
+
+    assert result == [(invitation, organization)]
+    invitation_repository.list_pending_for_email.assert_called_once()
+    call = invitation_repository.list_pending_for_email.call_args
+    assert call.kwargs["email"] == "member@example.com"
+
+
+def test_accept_invitation_by_id() -> None:
+    (
+        service,
+        invitation_repository,
+        membership_repository,
+        organization_repository,
+        _,
+    ) = make_service()
+
+    organization = make_organization()
+    user = make_user()
+    invitation = make_invitation(organization.id, email=user.email)
+    expected_membership = Membership(
+        user_id=user.id,
+        organization_id=organization.id,
+        role="member",
+    )
+
+    invitation_repository.get_by_id.return_value = invitation
+    organization_repository.get_by_id.return_value = organization
+    membership_repository.get_for_user_and_organization.return_value = None
+    invitation_repository.accept.return_value = expected_membership
+
+    result_organization, result_membership = service.accept_invitation_by_id(
+        invitation_id=invitation.id,
+        user=user,
+    )
+
+    assert result_organization is organization
+    assert result_membership is expected_membership
+    invitation_repository.accept.assert_called_once()
