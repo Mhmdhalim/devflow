@@ -1,14 +1,29 @@
 # Tests
 
-Repository-level tests live here.
+Repository-level full-stack tests live here. Backend unit, route, and integration tests live under `backend/tests/`.
 
-## E2E
+## Browser E2E
 
-`tests/e2e/` contains Playwright browser tests that exercise the full DevFlow stack:
+`tests/e2e/` contains browser tests that exercise:
 
-browser → React frontend → FastAPI backend → PostgreSQL
+```text
+Browser → React frontend → FastAPI backend → PostgreSQL
+```
 
-The smoke test covers registration, workspace creation, project creation, issue creation and update, comments, labels, and label filtering.
+The suite currently covers:
+
+- registration and authentication
+- workspace creation
+- project creation
+- issue creation and update
+- comments
+- labels, assignment, and filtering
+- two-user organization invitation link flow
+- invited-user registration/login redirect back to the invitation
+- invitation acceptance
+- pending invitation inbox after a normal sign-in
+- shared workspace/project visibility for the invited member
+- outsider project-access denial
 
 Run locally after the backend and frontend are available:
 
@@ -19,4 +34,4 @@ npx playwright install chromium
 npm test
 ```
 
-GitHub Actions runs the same flow automatically with PostgreSQL, database migrations, the backend API, the frontend, and Chromium.
+GitHub Actions provisions PostgreSQL, applies Alembic migrations, starts FastAPI and Vite, installs Chromium, and runs the same suite automatically.
