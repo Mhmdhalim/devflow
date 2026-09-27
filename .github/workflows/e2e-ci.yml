@@ -82,7 +82,14 @@ jobs:
 
       - name: Install frontend dependencies
         working-directory: frontend
-        run: npm ci
+        run: npm install
+
+      - name: Upload refreshed frontend lockfile
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-lockfile
+          path: frontend/package-lock.json
+          retention-days: 1
 
       - name: Build frontend
         working-directory: frontend
