@@ -125,3 +125,54 @@ def test_create_organization_requires_authentication() -> None:
     assert response.status_code == 401
 
     service.create_organization.assert_not_called()
+
+
+def test_list_organizations() -> None:
+    service = MagicMock()
+    user = make_user()
+
+    first = make_organization()
+
+    second = Organization(
+        name="Backend Team",
+        slug="backend-team",
+    )
+
+    now = datetime.now(UTC)
+
+    second.id = uuid.uuid4()
+    second.created_at = now
+    second.updated_at = now
+
+    service.list_user_organizations.return_value = [
+        (
+            first,
+            "owner",
+        ),
+        (
+            second,
+            "member",
+        ),
+    ]
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_organization_service] = lambda: service
+
+    response = client.get("/organizations")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert len(body) == 2
+
+    assert body[0]["slug"] == "devflow"
+    assert body[0]["role"] == "owner"
+
+    assert body[1]["slug"] == "backend-team"
+    assert body[1]["role"] == "member"
+
+    service.list_user_organizations.assert_called_once_with(user.id)

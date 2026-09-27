@@ -31,3 +31,9 @@ class OrganizationService:
             user_id=owner_id,
             role="owner",
         )
+
+    def list_user_organizations(
+        self,
+        user_id: uuid.UUID,
+    ) -> list[tuple[Organization, str]]:
+        return self.repository.list_for_user(user_id)
