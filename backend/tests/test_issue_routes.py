@@ -499,3 +499,51 @@ def test_update_issue_rejects_null_title() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 422
+
+
+def test_list_issues_with_label() -> None:
+    service = MagicMock()
+    user = make_user()
+
+    project_id = uuid.uuid4()
+    label_id = uuid.uuid4()
+
+    issue = make_issue(
+        project_id,
+        user.id,
+    )
+
+    service.list_issues.return_value = [issue]
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues?label_id={label_id}")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert len(body) == 1
+    assert body[0]["project_id"] == str(project_id)
+
+    service.list_issues.assert_called_once_with(
+        project_id=project_id,
+        user_id=user.id,
+        label_id=label_id,
+    )
+
+
+def test_list_issues_rejects_invalid_label_id() -> None:
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.get(f"/projects/{project_id}/issues?label_id=not-a-uuid")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422

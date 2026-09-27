@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.issue import Issue
+from app.models.label import issue_labels
 from app.models.project import Project
 from app.schemas.issue import (
     IssueCreate,
@@ -58,10 +59,21 @@ class IssueRepository:
     def list_for_project(
         self,
         project_id: uuid.UUID,
+        label_id: uuid.UUID | None = None,
     ) -> list[Issue]:
-        statement = (
-            select(Issue).where(Issue.project_id == project_id).order_by(Issue.number)
+        statement = select(Issue).where(
+            Issue.project_id == project_id,
         )
+
+        if label_id is not None:
+            statement = statement.join(
+                issue_labels,
+                Issue.id == issue_labels.c.issue_id,
+            ).where(
+                issue_labels.c.label_id == label_id,
+            )
+
+        statement = statement.order_by(Issue.number)
 
         return list(self.db.scalars(statement).all())
 
