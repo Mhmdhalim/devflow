@@ -1,5 +1,6 @@
 import uuid
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.comment import Comment
@@ -30,3 +31,15 @@ class CommentRepository:
         self.db.refresh(comment)
 
         return comment
+
+    def list_for_issue(
+        self,
+        issue_id: uuid.UUID,
+    ) -> list[Comment]:
+        statement = (
+            select(Comment)
+            .where(Comment.issue_id == issue_id)
+            .order_by(Comment.created_at)
+        )
+
+        return list(self.db.scalars(statement).all())

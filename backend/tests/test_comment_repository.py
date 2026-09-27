@@ -36,3 +36,31 @@ def test_create_comment() -> None:
 
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(added_comment)
+
+
+def test_list_for_issue() -> None:
+    db = MagicMock()
+    repository = CommentRepository(db)
+
+    issue_id = uuid.uuid4()
+    author_id = uuid.uuid4()
+
+    comments = [
+        Comment(
+            issue_id=issue_id,
+            author_id=author_id,
+            body="First comment",
+        ),
+        Comment(
+            issue_id=issue_id,
+            author_id=author_id,
+            body="Second comment",
+        ),
+    ]
+
+    db.scalars.return_value.all.return_value = comments
+
+    result = repository.list_for_issue(issue_id)
+
+    assert result == comments
+    db.scalars.assert_called_once()
