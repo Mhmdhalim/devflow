@@ -43,3 +43,14 @@ class ProjectRepository:
         self.db.refresh(project)
 
         return project
+
+    def list_for_organization(
+        self,
+        organization_id: uuid.UUID,
+    ) -> list[Project]:
+        statement = (
+            select(Project)
+            .where(Project.organization_id == organization_id)
+            .order_by(Project.created_at)
+        )
+        return list(self.db.scalars(statement).all())

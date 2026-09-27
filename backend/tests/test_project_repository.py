@@ -59,3 +59,32 @@ def test_create_project() -> None:
 
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(added_project)
+
+
+def test_list_for_organization() -> None:
+    db = MagicMock()
+    repository = ProjectRepository(db)
+
+    organization_id = uuid.uuid4()
+
+    projects = [
+        Project(
+            organization_id=organization_id,
+            name="Backend",
+            key="BACK",
+            description=None,
+        ),
+        Project(
+            organization_id=organization_id,
+            name="Frontend",
+            key="FRONT",
+            description=None,
+        ),
+    ]
+
+    db.scalars.return_value.all.return_value = projects
+
+    result = repository.list_for_organization(organization_id)
+
+    assert result == projects
+    db.scalars.assert_called_once()

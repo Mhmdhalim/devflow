@@ -74,3 +74,36 @@ def create_project(
         ) from exc
 
     return ProjectRead.model_validate(project)
+
+
+@router.get(
+    "",
+    response_model=list[ProjectRead],
+)
+def list_projects(
+    organization_id: uuid.UUID,
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+    service: ProjectService = Depends(get_project_service),
+) -> list[ProjectRead]:
+    try:
+        projects = service.list_projects(
+            organization_id=organization_id,
+            user_id=current_user.id,
+        )
+
+    except ProjectOrganizationNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Organization not found",
+        ) from exc
+
+    except ProjectPermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this organization",
+        ) from exc
+
+    return [ProjectRead.model_validate(project) for project in projects]

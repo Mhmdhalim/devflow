@@ -178,3 +178,101 @@ def test_create_project_with_duplicate_key() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 409
+
+
+def test_list_projects() -> None:
+    service = MagicMock()
+    user = make_user()
+    organization_id = uuid.uuid4()
+
+    first = make_project(organization_id)
+
+    second = Project(
+        organization_id=organization_id,
+        name="Frontend",
+        key="FRONT",
+        description=None,
+    )
+
+    now = datetime.now(UTC)
+
+    second.id = uuid.uuid4()
+    second.created_at = now
+    second.updated_at = now
+
+    service.list_projects.return_value = [
+        first,
+        second,
+    ]
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_project_service] = lambda: service
+
+    response = client.get(f"/organizations/{organization_id}/projects")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert len(body) == 2
+    assert body[0]["key"] == "DEV"
+    assert body[1]["key"] == "FRONT"
+
+    service.list_projects.assert_called_once_with(
+        organization_id=organization_id,
+        user_id=user.id,
+    )
+
+
+def test_list_projects_requires_authentication() -> None:
+    service = MagicMock()
+    organization_id = uuid.uuid4()
+
+    app.dependency_overrides[get_project_service] = lambda: service
+
+    response = client.get(f"/organizations/{organization_id}/projects")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+
+    service.list_projects.assert_not_called()
+
+
+def test_list_projects_forbidden() -> None:
+    service = MagicMock()
+    user = make_user()
+    organization_id = uuid.uuid4()
+
+    service.list_projects.side_effect = ProjectPermissionDeniedError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_project_service] = lambda: service
+
+    response = client.get(f"/organizations/{organization_id}/projects")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+def test_list_projects_when_organization_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    organization_id = uuid.uuid4()
+
+    service.list_projects.side_effect = ProjectOrganizationNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_project_service] = lambda: service
+
+    response = client.get(f"/organizations/{organization_id}/projects")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
