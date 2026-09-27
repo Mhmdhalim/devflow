@@ -256,3 +256,19 @@ def test_list_labels_when_project_missing() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == "Project not found"
+
+
+def test_create_label_rejects_whitespace_name() -> None:
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.post(
+        f"/projects/{project_id}/labels",
+        json={"name": "   "},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
