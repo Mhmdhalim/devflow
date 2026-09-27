@@ -81,7 +81,7 @@ export function OrganizationMembersPage() {
       });
 
       setInviteUrl(
-        `${window.location.origin}/invitations/${invitation.token}`,
+        `${window.location.origin}/invite/${invitation.token}`,
       );
       setEmail("");
       setRole("member");
