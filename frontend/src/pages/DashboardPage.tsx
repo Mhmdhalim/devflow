@@ -127,7 +127,10 @@ export function DashboardPage() {
                     <div className="workspace-logo">{org.name.slice(0, 1).toUpperCase()}</div>
                     <div><h2>{org.name}</h2><p>{org.slug} · <span className="role-pill">{org.role}</span></p></div>
                   </div>
-                  {canCreate ? <button className="button secondary small" onClick={() => setProjectOrg(org)}>+ Project</button> : null}
+                  <div className="workspace-actions">
+                    <Link className="button secondary small" to={`/organizations/${org.id}/members`}>Members</Link>
+                    {canCreate ? <button className="button secondary small" onClick={() => setProjectOrg(org)}>+ Project</button> : null}
+                  </div>
                 </header>
                 {orgProjects.length === 0 ? (
                   <div className="inline-empty">No projects yet{canCreate ? " — create the first one." : "."}</div>
