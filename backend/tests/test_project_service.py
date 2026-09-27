@@ -3,12 +3,14 @@ from unittest.mock import MagicMock
 
 import pytest
 
+from app.models.membership import Membership
 from app.models.organization import Organization
 from app.models.project import Project
 from app.schemas.project import ProjectCreate
 from app.services.project import (
     ProjectAlreadyExistsError,
     ProjectOrganizationNotFoundError,
+    ProjectPermissionDeniedError,
     ProjectService,
 )
 
@@ -24,18 +26,27 @@ def make_data() -> ProjectCreate:
 def test_create_project() -> None:
     project_repository = MagicMock()
     organization_repository = MagicMock()
+    membership_repository = MagicMock()
 
     service = ProjectService(
         project_repository,
         organization_repository,
+        membership_repository,
     )
 
     organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     data = make_data()
 
     organization_repository.get_by_id.return_value = Organization(
         name="DevFlow",
         slug="devflow",
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="owner",
     )
 
     project_repository.get_by_key.return_value = None
@@ -52,11 +63,17 @@ def test_create_project() -> None:
     result = service.create_project(
         data,
         organization_id,
+        user_id,
     )
 
     assert result is expected_project
 
     organization_repository.get_by_id.assert_called_once_with(organization_id)
+
+    membership_repository.get_for_user_and_organization.assert_called_once_with(
+        user_id=user_id,
+        organization_id=organization_id,
+    )
 
     project_repository.get_by_key.assert_called_once_with(
         organization_id,
@@ -72,13 +89,16 @@ def test_create_project() -> None:
 def test_create_project_when_organization_missing() -> None:
     project_repository = MagicMock()
     organization_repository = MagicMock()
+    membership_repository = MagicMock()
 
     service = ProjectService(
         project_repository,
         organization_repository,
+        membership_repository,
     )
 
     organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
     organization_repository.get_by_id.return_value = None
 
@@ -86,8 +106,10 @@ def test_create_project_when_organization_missing() -> None:
         service.create_project(
             make_data(),
             organization_id,
+            user_id,
         )
 
+    membership_repository.get_for_user_and_organization.assert_not_called()
     project_repository.get_by_key.assert_not_called()
     project_repository.create.assert_not_called()
 
@@ -95,18 +117,27 @@ def test_create_project_when_organization_missing() -> None:
 def test_create_project_with_existing_key() -> None:
     project_repository = MagicMock()
     organization_repository = MagicMock()
+    membership_repository = MagicMock()
 
     service = ProjectService(
         project_repository,
         organization_repository,
+        membership_repository,
     )
 
     organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
     data = make_data()
 
     organization_repository.get_by_id.return_value = Organization(
         name="DevFlow",
         slug="devflow",
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="owner",
     )
 
     project_repository.get_by_key.return_value = Project(
@@ -120,6 +151,75 @@ def test_create_project_with_existing_key() -> None:
         service.create_project(
             data,
             organization_id,
+            user_id,
         )
 
+    project_repository.create.assert_not_called()
+
+
+def test_create_project_when_user_is_not_member() -> None:
+    project_repository = MagicMock()
+    organization_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = ProjectService(
+        project_repository,
+        organization_repository,
+        membership_repository,
+    )
+
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    organization_repository.get_by_id.return_value = Organization(
+        name="DevFlow",
+        slug="devflow",
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = None
+
+    with pytest.raises(ProjectPermissionDeniedError):
+        service.create_project(
+            make_data(),
+            organization_id,
+            user_id,
+        )
+
+    project_repository.get_by_key.assert_not_called()
+    project_repository.create.assert_not_called()
+
+
+def test_create_project_when_user_is_regular_member() -> None:
+    project_repository = MagicMock()
+    organization_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = ProjectService(
+        project_repository,
+        organization_repository,
+        membership_repository,
+    )
+
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    organization_repository.get_by_id.return_value = Organization(
+        name="DevFlow",
+        slug="devflow",
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="member",
+    )
+
+    with pytest.raises(ProjectPermissionDeniedError):
+        service.create_project(
+            make_data(),
+            organization_id,
+            user_id,
+        )
+
+    project_repository.get_by_key.assert_not_called()
     project_repository.create.assert_not_called()

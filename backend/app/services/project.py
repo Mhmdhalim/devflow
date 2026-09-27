@@ -1,6 +1,7 @@
 import uuid
 
 from app.models.project import Project
+from app.repositories.membership import MembershipRepository
 from app.repositories.organization import OrganizationRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.project import ProjectCreate
@@ -14,24 +15,45 @@ class ProjectOrganizationNotFoundError(Exception):
     pass
 
 
+class ProjectPermissionDeniedError(Exception):
+    pass
+
+
 class ProjectService:
     def __init__(
         self,
         project_repository: ProjectRepository,
         organization_repository: OrganizationRepository,
+        membership_repository: MembershipRepository,
     ) -> None:
         self.project_repository = project_repository
         self.organization_repository = organization_repository
+        self.membership_repository = membership_repository
 
     def create_project(
         self,
         data: ProjectCreate,
         organization_id: uuid.UUID,
+        user_id: uuid.UUID,
     ) -> Project:
         organization = self.organization_repository.get_by_id(organization_id)
 
         if organization is None:
             raise ProjectOrganizationNotFoundError
+
+        membership = self.membership_repository.get_for_user_and_organization(
+            user_id=user_id,
+            organization_id=organization_id,
+        )
+
+        if membership is None:
+            raise ProjectPermissionDeniedError
+
+        if membership.role not in {
+            "owner",
+            "admin",
+        }:
+            raise ProjectPermissionDeniedError
 
         existing_project = self.project_repository.get_by_key(
             organization_id,
