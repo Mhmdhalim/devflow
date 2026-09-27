@@ -144,3 +144,23 @@ def test_list_users() -> None:
     assert len(response.json()) == 2
     assert response.json()[0]["email"] == "alice@example.com"
     assert response.json()[1]["email"] == "bob@example.com"
+
+
+def test_create_user_rejects_short_password() -> None:
+    service = MagicMock()
+
+    app.dependency_overrides[get_user_service] = lambda: service
+
+    response = client.post(
+        "/users",
+        json={
+            "email": "alice@example.com",
+            "full_name": "Alice Johnson",
+            "password": "short",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    service.create_user.assert_not_called()
