@@ -1,5 +1,3 @@
-import uuid
-
 from app.core.security import hash_password
 from app.models.user import User
 from app.repositories.user import UserRepository
@@ -7,10 +5,6 @@ from app.schemas.user import UserCreate
 
 
 class UserAlreadyExistsError(Exception):
-    pass
-
-
-class UserNotFoundError(Exception):
     pass
 
 
@@ -30,14 +24,3 @@ class UserService:
             data,
             hashed_password,
         )
-
-    def get_user(self, user_id: uuid.UUID) -> User:
-        user = self.repository.get_by_id(user_id)
-
-        if user is None:
-            raise UserNotFoundError
-
-        return user
-
-    def list_users(self) -> list[User]:
-        return self.repository.list_all()
