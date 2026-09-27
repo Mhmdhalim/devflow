@@ -88,3 +88,28 @@ def test_list_for_organization() -> None:
 
     assert result == projects
     db.scalars.assert_called_once()
+
+
+def test_get_by_id() -> None:
+    db = MagicMock()
+    repository = ProjectRepository(db)
+
+    project_id = uuid.uuid4()
+
+    expected_project = Project(
+        organization_id=uuid.uuid4(),
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    db.get.return_value = expected_project
+
+    result = repository.get_by_id(project_id)
+
+    assert result is expected_project
+
+    db.get.assert_called_once_with(
+        Project,
+        project_id,
+    )
