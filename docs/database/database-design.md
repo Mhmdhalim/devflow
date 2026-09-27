@@ -126,6 +126,12 @@ issues
 
 Foreign keys preserve relational integrity, while unique and check constraints enforce important domain rules at the database level.
 
+## Entity relationship diagram
+
+![DevFlow backend v1 database ERD](03-database-erd.svg)
+
+The editable source is stored in `database-erd.drawio`.
+
 ## Schema sources
 
 The authoritative backend v1 schema is defined by:
@@ -134,7 +140,7 @@ The authoritative backend v1 schema is defined by:
 2. Alembic migrations in `backend/migrations/`
 3. `docs/database/schema.dbml`
 
-The existing database ERD image and editable Draw.io source predate the final v1 schema and should not be treated as authoritative until they are regenerated.
+The ERD above is a visual companion to these sources and reflects the current backend v1 tables and relationships.
 
 ## Future scope
 
