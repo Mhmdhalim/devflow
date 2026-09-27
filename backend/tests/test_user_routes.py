@@ -96,3 +96,22 @@ def test_users_collection_does_not_allow_public_listing() -> None:
 def test_user_detail_endpoint_is_not_exposed() -> None:
     response = client.get("/users/00000000-0000-0000-0000-000000000000")
     assert response.status_code == 404
+
+
+def test_create_user_rejects_blank_full_name() -> None:
+    service = MagicMock()
+    app.dependency_overrides[get_user_service] = lambda: service
+
+    response = client.post(
+        "/users",
+        json={
+            "email": "blank-name@example.com",
+            "full_name": "   ",
+            "password": "secure-password-123",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    service.create_user.assert_not_called()
