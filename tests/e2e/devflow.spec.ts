@@ -158,7 +158,11 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
   await outsiderPage.getByLabel("Password").fill("password123");
   await outsiderPage.getByRole("button", { name: "Create account" }).click();
 
+  await expect(
+    outsiderPage.getByRole("heading", { name: "Workspaces" }),
+  ).toBeVisible();
   await expect(outsiderPage.getByRole("heading", { name: workspaceName })).toHaveCount(0);
+
   const outsiderToken = await outsiderPage.evaluate(() =>
     window.localStorage.getItem("devflow_access_token"),
   );
