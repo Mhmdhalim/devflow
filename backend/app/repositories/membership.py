@@ -4,6 +4,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from app.models.membership import Membership
+from app.models.user import User
 
 
 class MembershipRepository:
@@ -24,3 +25,17 @@ class MembershipRepository:
         )
 
         return self.db.scalars(statement).first()
+
+    def list_for_organization(
+        self,
+        organization_id: uuid.UUID,
+    ) -> list[tuple[Membership, User]]:
+        statement = (
+            select(Membership, User)
+            .join(User, User.id == Membership.user_id)
+            .where(Membership.organization_id == organization_id)
+            .order_by(Membership.created_at)
+        )
+
+        rows = self.db.execute(statement).all()
+        return [(membership, user) for membership, user in rows]
