@@ -16,6 +16,10 @@ class IssuePermissionDeniedError(Exception):
     pass
 
 
+class IssueNotFoundError(Exception):
+    pass
+
+
 class IssueService:
     def __init__(
         self,
@@ -75,3 +79,24 @@ class IssueService:
         )
 
         return self.issue_repository.list_for_project(project_id)
+
+    def get_issue(
+        self,
+        project_id: uuid.UUID,
+        issue_number: int,
+        user_id: uuid.UUID,
+    ) -> Issue:
+        self._get_project_for_member(
+            project_id=project_id,
+            user_id=user_id,
+        )
+
+        issue = self.issue_repository.get_by_number(
+            project_id=project_id,
+            issue_number=issue_number,
+        )
+
+        if issue is None:
+            raise IssueNotFoundError
+
+        return issue
