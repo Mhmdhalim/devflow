@@ -1,6 +1,6 @@
 # DevFlow Frontend
 
-React + TypeScript frontend for DevFlow Backend v1.0.0.
+React + TypeScript frontend for DevFlow.
 
 ## Stack
 
@@ -14,7 +14,7 @@ React + TypeScript frontend for DevFlow Backend v1.0.0.
 
 ## Local development
 
-Run the DevFlow backend on `http://localhost:8000`, then:
+Run the FastAPI backend on `http://127.0.0.1:8000`, then from this directory:
 
 ```bash
 npm install
@@ -24,7 +24,15 @@ npm run dev
 
 Open `http://localhost:5173`.
 
-Vite proxies the backend routes to port `8000`, so the backend does not need a development CORS change.
+The Vite dev server sends API requests through the local `/api` reverse proxy to `127.0.0.1:8000`. This avoids frontend/backend route collisions and the Windows IPv6 `localhost` mismatch.
+
+To expose the frontend to another device on the same local network:
+
+```bash
+npm run dev -- --host 0.0.0.0
+```
+
+Use the Network URL printed by Vite. A `localhost` URL always points to the device opening it.
 
 ## Production build
 
@@ -35,19 +43,22 @@ npm run preview
 
 ## Docker
 
-The included `Dockerfile` builds the frontend and serves it through Nginx. The included Nginx configuration expects the backend Docker Compose service to be named `api`, matching the current DevFlow compose configuration.
+The frontend Dockerfile builds the React application and serves it through Nginx. In Docker Compose, Nginx proxies `/api/*` to the `api` service and falls back to `index.html` for client-side routes such as invitation deep links.
 
-## Backend features represented
+## Product flows represented
 
 - registration and JWT login
-- current-user session
-- organizations and membership roles
+- authenticated session hydration
+- organizations/workspaces and membership roles
+- team member listing
+- secure invitation links
+- pending invitation inbox and acceptance
 - organization projects
 - project issue board
 - issue creation and partial updates
+- organization-scoped assignees
 - priorities and statuses
-- issue comments
-- project labels
-- issue-label assignment and removal
+- comments
+- project labels and assignment
 - label-based issue filtering
-- API health/readiness status
+- backend health/readiness status
