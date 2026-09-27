@@ -1,5 +1,5 @@
 import uuid
-from typing import Annotated
+from typing import Annotated, NoReturn
 
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -45,7 +45,7 @@ def get_organization_access_service(
     )
 
 
-def _raise_invitation_error(exc: Exception) -> None:
+def _raise_invitation_error(exc: Exception) -> NoReturn:
     if isinstance(exc, OrganizationAccessNotFoundError):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
