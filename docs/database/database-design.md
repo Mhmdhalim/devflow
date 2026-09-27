@@ -1,38 +1,148 @@
 # Database Design
 
-DevFlow uses PostgreSQL as its primary persistent data store.
+DevFlow backend v1 uses PostgreSQL as its persistent data store.
+
+The database schema is managed through SQLAlchemy models and Alembic migrations.
 
 ## Main domains
 
-### Authentication
-- `users`
-- `refresh_tokens`
+### Users and authentication
 
-### Organizations
+- `users`
+
+User passwords are stored as hashes. Authentication uses JWT access tokens; refresh-token persistence is not part of backend v1.
+
+### Organizations and memberships
+
 - `organizations`
-- `organization_members`
+- `memberships`
+
+`memberships` represents the relationship between users and organizations.
+
+Each membership has one of the following roles:
+
+- `owner`
+- `admin`
+- `member`
+
+A user can have only one membership per organization.
 
 ### Projects
+
 - `projects`
-- `project_members`
-- `labels`
 
-### Issues and collaboration
+Each project belongs to one organization.
+
+Project keys are unique within their organization.
+
+### Issues
+
 - `issues`
-- `issue_assignees`
-- `issue_labels`
+
+Each issue belongs to one project and contains:
+
+- a project-scoped sequential issue number
+- title
+- optional description
+- status
+- priority
+- reporter
+- optional assignee
+- creation and update timestamps
+
+Supported issue statuses:
+
+- `todo`
+- `in_progress`
+- `done`
+
+Supported priorities:
+
+- `low`
+- `medium`
+- `high`
+
+The combination of `project_id` and issue `number` is unique.
+
+### Comments
+
 - `comments`
-- `attachments`
 
-### Operational data
-- `notifications`
-- `audit_logs`
+Comments belong to issues and reference the user who authored them.
 
-Foreign keys preserve relational integrity, join tables represent many-to-many relationships, and indexes will be added based on real access patterns and measured query needs.
+### Labels
 
+- `labels`
+- `issue_labels`
 
-## Entity relationship diagram
+Labels are scoped to projects.
 
-![DevFlow database ERD](03-database-erd.png)
+Label names are unique within each project.
 
-The editable source is stored in `database-erd.drawio`, and the DBML schema is stored in `schema.dbml`.
+`issue_labels` is the many-to-many join table between issues and labels.
+
+## Current v1 tables
+
+```text
+users
+organizations
+memberships
+projects
+issues
+comments
+labels
+issue_labels
+```
+
+Alembic also maintains:
+
+```text
+alembic_version
+```
+
+This table is migration metadata rather than an application domain table.
+
+## Relationships
+
+```text
+users
+  ├── memberships ── organizations
+  ├── reported issues
+  ├── assigned issues
+  └── comments
+
+organizations
+  ├── memberships
+  └── projects
+
+projects
+  ├── issues
+  └── labels
+
+issues
+  ├── comments
+  └── issue_labels ── labels
+```
+
+Foreign keys preserve relational integrity, while unique and check constraints enforce important domain rules at the database level.
+
+## Schema sources
+
+The authoritative backend v1 schema is defined by:
+
+1. SQLAlchemy models in `backend/app/models/`
+2. Alembic migrations in `backend/migrations/`
+3. `docs/database/schema.dbml`
+
+The existing database ERD image and editable Draw.io source predate the final v1 schema and should not be treated as authoritative until they are regenerated.
+
+## Future scope
+
+The following database concepts are intentionally outside backend v1:
+
+- refresh-token persistence
+- project-specific membership tables
+- multiple issue assignees
+- attachments
+- notifications
+- audit logs
