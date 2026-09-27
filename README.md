@@ -58,7 +58,7 @@ Detailed architecture documentation lives in `docs/architecture/`.
 
 ## Current status
 
-**Backend v1: Feature complete — final documentation and end-to-end verification in progress.**
+**Backend v1: Complete.**
 
 ## Local infrastructure
 
@@ -110,3 +110,4 @@ Requirement
 → Merge
 → Documentation
 ```
+
