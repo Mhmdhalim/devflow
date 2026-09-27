@@ -16,6 +16,7 @@ EXPECTED_TABLES = {
     "comments",
     "labels",
     "issue_labels",
+    "organization_invitations",
 }
 
 
