@@ -67,3 +67,36 @@ def create_issue(
         ) from exc
 
     return IssueRead.model_validate(issue)
+
+
+@router.get(
+    "",
+    response_model=list[IssueRead],
+)
+def list_issues(
+    project_id: uuid.UUID,
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+    service: IssueService = Depends(get_issue_service),
+) -> list[IssueRead]:
+    try:
+        issues = service.list_issues(
+            project_id=project_id,
+            user_id=current_user.id,
+        )
+
+    except IssueProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from exc
+
+    except IssuePermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this project",
+        ) from exc
+
+    return [IssueRead.model_validate(issue) for issue in issues]
