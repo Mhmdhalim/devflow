@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from app.api.routes.auth import router as auth_router
 from app.api.routes.comments import router as comments_router
 from app.api.routes.health import router as health_router
+from app.api.routes.issue_labels import router as issue_labels_router
 from app.api.routes.issues import router as issues_router
 from app.api.routes.labels import router as labels_router
 from app.api.routes.organizations import (
@@ -38,3 +39,4 @@ app.include_router(projects_router)
 app.include_router(issues_router)
 app.include_router(comments_router)
 app.include_router(labels_router)
+app.include_router(issue_labels_router)
