@@ -67,3 +67,23 @@ class ProjectService:
             data=data,
             organization_id=organization_id,
         )
+
+    def list_projects(
+        self,
+        organization_id: uuid.UUID,
+        user_id: uuid.UUID,
+    ) -> list[Project]:
+        organization = self.organization_repository.get_by_id(organization_id)
+
+        if organization is None:
+            raise ProjectOrganizationNotFoundError
+
+        membership = self.membership_repository.get_for_user_and_organization(
+            user_id=user_id,
+            organization_id=organization_id,
+        )
+
+        if membership is None:
+            raise ProjectPermissionDeniedError
+
+        return self.project_repository.list_for_organization(organization_id)
