@@ -370,3 +370,132 @@ def test_get_issue_when_project_missing() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == ("Project not found")
+
+
+def test_update_issue() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    issue = make_issue(
+        project_id,
+        user.id,
+    )
+    issue.number = 12
+    issue.status = "in_progress"
+    issue.priority = "high"
+
+    service.update_issue.return_value = issue
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/12",
+        json={
+            "status": "in_progress",
+            "priority": "high",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["number"] == 12
+    assert body["status"] == "in_progress"
+    assert body["priority"] == "high"
+
+    call = service.update_issue.call_args
+
+    assert call.kwargs["project_id"] == project_id
+    assert call.kwargs["issue_number"] == 12
+    assert call.kwargs["user_id"] == user.id
+    assert call.kwargs["data"].status == ("in_progress")
+
+
+def test_update_issue_requires_authentication() -> None:
+    service = MagicMock()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/12",
+        json={
+            "priority": "high",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    service.update_issue.assert_not_called()
+
+
+def test_update_issue_forbidden() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.update_issue.side_effect = IssuePermissionDeniedError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/12",
+        json={
+            "priority": "high",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+def test_update_issue_when_issue_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.update_issue.side_effect = IssueNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/99",
+        json={
+            "priority": "high",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Issue not found")
+
+
+def test_update_issue_rejects_null_title() -> None:
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/12",
+        json={
+            "title": None,
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
