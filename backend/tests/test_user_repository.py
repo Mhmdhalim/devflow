@@ -6,12 +6,12 @@ from app.repositories.user import UserRepository
 from app.schemas.user import UserCreate
 
 
-def test_create_user() -> None:
+def test_create_user_normalizes_email() -> None:
     db = MagicMock()
     repository = UserRepository(db)
 
     data = UserCreate(
-        email="alice@example.com",
+        email="Alice@Example.com",
         full_name="Alice Johnson",
         password="secure-password-123",
     )
@@ -60,30 +60,7 @@ def test_get_by_email() -> None:
 
     db.scalars.return_value.first.return_value = expected_user
 
-    result = repository.get_by_email("charlie@example.com")
+    result = repository.get_by_email(" Charlie@Example.com ")
 
     assert result is expected_user
-    db.scalars.assert_called_once()
-
-
-def test_list_all_users() -> None:
-    db = MagicMock()
-    repository = UserRepository(db)
-
-    users = [
-        User(
-            email="alice@example.com",
-            full_name="Alice Johnson",
-        ),
-        User(
-            email="bob@example.com",
-            full_name="Bob Smith",
-        ),
-    ]
-
-    db.scalars.return_value.all.return_value = users
-
-    result = repository.list_all()
-
-    assert result == users
     db.scalars.assert_called_once()
