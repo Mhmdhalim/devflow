@@ -145,3 +145,48 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
 
   await memberContext.close();
 });
+
+
+test("invited user sees pending invitation after normal sign in", async ({ page, browser, baseURL }) => {
+  const runId = Date.now().toString();
+  const ownerEmail = `inbox-owner+${runId}@example.com`;
+  const memberEmail = `inbox-member+${runId}@example.com`;
+  const workspaceName = `Inbox Workspace ${runId}`;
+  const workspaceSlug = `inbox-workspace-${runId}`;
+
+  await page.goto("/register");
+  await page.getByLabel("Full name").fill("Inbox Owner");
+  await page.getByLabel("Email address").fill(ownerEmail);
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  await page.getByRole("button", { name: "+ New workspace" }).click();
+  const workspaceDialog = page.getByRole("dialog", { name: "New workspace" });
+  await workspaceDialog.getByLabel("Name").fill(workspaceName);
+  await workspaceDialog.getByLabel("Slug").fill(workspaceSlug);
+  await workspaceDialog.getByRole("button", { name: "Create workspace" }).click();
+
+  await page.getByRole("link", { name: "Members" }).click();
+  await page.getByLabel("Email address").fill(memberEmail);
+  await page.getByLabel("Role").selectOption("member");
+  await page.getByRole("button", { name: "Create invite" }).click();
+
+  const memberContext = await browser.newContext({ baseURL });
+  const memberPage = await memberContext.newPage();
+
+  await memberPage.goto("/register");
+  await memberPage.getByLabel("Full name").fill("Inbox Member");
+  await memberPage.getByLabel("Email address").fill(memberEmail);
+  await memberPage.getByLabel("Password").fill("password123");
+  await memberPage.getByRole("button", { name: "Create account" }).click();
+
+  const inbox = memberPage.getByRole("region", { name: "Pending invitations" });
+  await expect(inbox).toBeVisible();
+  await expect(inbox.getByText(workspaceName)).toBeVisible();
+  await inbox.getByRole("button", { name: "Accept" }).click();
+
+  await expect(inbox).not.toBeVisible();
+  await expect(memberPage.getByRole("heading", { name: workspaceName })).toBeVisible();
+
+  await memberContext.close();
+});
