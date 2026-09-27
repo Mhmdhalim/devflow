@@ -46,6 +46,9 @@ export const api = {
       `/organizations/${organizationId}/members`,
     ),
 
+  myInvitations: () =>
+    apiRequest<OrganizationInvitationDetail[]>("/invitations"),
+
   pendingInvitations: (organizationId: string) =>
     apiRequest<OrganizationInvitation[]>(
       `/organizations/${organizationId}/invitations`,
@@ -66,6 +69,12 @@ export const api = {
   invitation: (token: string) =>
     apiRequest<OrganizationInvitationDetail>(
       `/invitations/${encodeURIComponent(token)}`,
+    ),
+
+  acceptInvitationById: (invitationId: string) =>
+    apiRequest<Organization>(
+      `/invitations/by-id/${invitationId}/accept`,
+      { method: "POST" },
     ),
 
   acceptInvitation: (token: string) =>
