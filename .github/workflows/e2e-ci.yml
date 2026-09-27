@@ -18,7 +18,7 @@ on:
       - ".github/workflows/e2e-ci.yml"
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
   e2e:
@@ -47,8 +47,6 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref || github.ref_name }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -85,21 +83,9 @@ jobs:
         with:
           node-version: "22"
 
-      - name: Refresh frontend dependencies
+      - name: Install frontend dependencies
         working-directory: frontend
-        run: npm install
-
-      - name: Commit refreshed frontend lockfile
-        if: github.event_name == 'pull_request'
-        run: |
-          if git diff --quiet -- frontend/package-lock.json; then
-            exit 0
-          fi
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add frontend/package-lock.json
-          git commit -m "chore: refresh frontend lockfile"
-          git push origin HEAD:${{ github.head_ref }}
+        run: npm ci
 
       - name: Build frontend
         working-directory: frontend
