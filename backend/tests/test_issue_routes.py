@@ -574,3 +574,28 @@ def test_create_issue_rejects_non_member_assignee() -> None:
     assert response.json()["detail"] == (
         "Assignee must be a member of the project organization"
     )
+
+
+def test_update_issue_rejects_non_member_assignee() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.update_issue.side_effect = IssueAssigneeNotMemberError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.patch(
+        f"/projects/{project_id}/issues/12",
+        json={
+            "assignee_id": str(uuid.uuid4()),
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Assignee must be a member of the project organization"
+    )
