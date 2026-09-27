@@ -59,3 +59,45 @@ def test_accept_invitation_creates_membership() -> None:
 
     db.add.assert_called_once_with(membership)
     db.commit.assert_called_once()
+
+
+def test_list_pending_for_email() -> None:
+    db = MagicMock()
+    repository = OrganizationInvitationRepository(db)
+    invitation = OrganizationInvitation(
+        organization_id=uuid.uuid4(),
+        email="member@example.com",
+        role="member",
+        token_hash="hashed",
+        invited_by_id=uuid.uuid4(),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    db.scalars.return_value.all.return_value = [invitation]
+
+    result = repository.list_pending_for_email(
+        email="member@example.com",
+        now=datetime.now(UTC),
+    )
+
+    assert result == [invitation]
+    db.scalars.assert_called_once()
+
+
+def test_get_invitation_by_id() -> None:
+    db = MagicMock()
+    repository = OrganizationInvitationRepository(db)
+    invitation_id = uuid.uuid4()
+    expected = OrganizationInvitation(
+        organization_id=uuid.uuid4(),
+        email="member@example.com",
+        role="member",
+        token_hash="hashed",
+        invited_by_id=uuid.uuid4(),
+        expires_at=datetime.now(UTC) + timedelta(days=1),
+    )
+    db.get.return_value = expected
+
+    result = repository.get_by_id(invitation_id)
+
+    assert result is expected
+    db.get.assert_called_once_with(OrganizationInvitation, invitation_id)

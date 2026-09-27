@@ -31,8 +31,6 @@ export const api = {
     }, false),
 
   me: () => apiRequest<User>("/auth/me"),
-  users: () => apiRequest<User[]>("/users"),
-
   health: () => apiRequest<HealthResponse>("/health", {}, false),
   ready: () => apiRequest<HealthResponse>("/ready", {}, false),
 
@@ -47,6 +45,9 @@ export const api = {
     apiRequest<OrganizationMember[]>(
       `/organizations/${organizationId}/members`,
     ),
+
+  myInvitations: () =>
+    apiRequest<OrganizationInvitationDetail[]>("/invitations"),
 
   pendingInvitations: (organizationId: string) =>
     apiRequest<OrganizationInvitation[]>(
@@ -68,6 +69,12 @@ export const api = {
   invitation: (token: string) =>
     apiRequest<OrganizationInvitationDetail>(
       `/invitations/${encodeURIComponent(token)}`,
+    ),
+
+  acceptInvitationById: (invitationId: string) =>
+    apiRequest<Organization>(
+      `/invitations/by-id/${invitationId}/accept`,
+      { method: "POST" },
     ),
 
   acceptInvitation: (token: string) =>

@@ -1,6 +1,6 @@
 import uuid
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.models.user import User
@@ -17,7 +17,7 @@ class UserRepository:
         hashed_password: str,
     ) -> User:
         user = User(
-            email=str(data.email),
+            email=str(data.email).strip().lower(),
             full_name=data.full_name,
             hashed_password=hashed_password,
         )
@@ -32,9 +32,6 @@ class UserRepository:
         return self.db.get(User, user_id)
 
     def get_by_email(self, email: str) -> User | None:
-        statement = select(User).where(User.email == email)
+        normalized_email = email.strip().lower()
+        statement = select(User).where(func.lower(User.email) == normalized_email)
         return self.db.scalars(statement).first()
-
-    def list_all(self) -> list[User]:
-        statement = select(User).order_by(User.created_at)
-        return list(self.db.scalars(statement).all())

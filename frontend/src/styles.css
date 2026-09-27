@@ -266,3 +266,5 @@ button { cursor: pointer; }
   .workspace-actions .button { flex: 1; }
   .invite-link-row { grid-template-columns: 1fr; }
 }
+
+.invitation-inbox { margin-bottom: 18px; }

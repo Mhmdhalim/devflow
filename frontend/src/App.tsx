@@ -22,7 +22,7 @@ export default function App() {
             element={<ProtectedRoute><OrganizationMembersPage /></ProtectedRoute>}
           />
           <Route
-            path="/invitations/:token"
+            path="/invite/:token"
             element={<ProtectedRoute><InvitationPage /></ProtectedRoute>}
           />
           <Route path="/projects/:projectId" element={<ProtectedRoute><ProjectPage /></ProtectedRoute>} />

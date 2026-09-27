@@ -187,6 +187,41 @@ class OrganizationAccessService:
             now=datetime.now(UTC),
         )
 
+    def list_user_invitations(
+        self,
+        *,
+        user_email: str,
+    ) -> list[tuple[OrganizationInvitation, Organization]]:
+        invitations = self.invitation_repository.list_pending_for_email(
+            email=user_email.strip().lower(),
+            now=datetime.now(UTC),
+        )
+
+        results: list[tuple[OrganizationInvitation, Organization]] = []
+
+        for invitation in invitations:
+            organization = self._get_organization(invitation.organization_id)
+            results.append((invitation, organization))
+
+        return results
+
+    def _validate_invitation_for_user(
+        self,
+        invitation: OrganizationInvitation,
+        *,
+        user_email: str,
+    ) -> Organization:
+        if invitation.accepted_at is not None:
+            raise OrganizationInvitationAlreadyAcceptedError
+
+        if invitation.expires_at <= datetime.now(UTC):
+            raise OrganizationInvitationExpiredError
+
+        if invitation.email.lower() != user_email.strip().lower():
+            raise OrganizationInvitationEmailMismatchError
+
+        return self._get_organization(invitation.organization_id)
+
     def get_invitation(
         self,
         *,
@@ -200,18 +235,44 @@ class OrganizationAccessService:
         if invitation is None:
             raise OrganizationInvitationNotFoundError
 
-        if invitation.accepted_at is not None:
-            raise OrganizationInvitationAlreadyAcceptedError
-
-        if invitation.expires_at <= datetime.now(UTC):
-            raise OrganizationInvitationExpiredError
-
-        if invitation.email.lower() != user_email.strip().lower():
-            raise OrganizationInvitationEmailMismatchError
-
-        organization = self._get_organization(invitation.organization_id)
+        organization = self._validate_invitation_for_user(
+            invitation,
+            user_email=user_email,
+        )
 
         return invitation, organization
+
+    def accept_invitation_by_id(
+        self,
+        *,
+        invitation_id: uuid.UUID,
+        user: User,
+    ) -> tuple[Organization, Membership]:
+        invitation = self.invitation_repository.get_by_id(invitation_id)
+
+        if invitation is None:
+            raise OrganizationInvitationNotFoundError
+
+        organization = self._validate_invitation_for_user(
+            invitation,
+            user_email=user.email,
+        )
+
+        existing = self.membership_repository.get_for_user_and_organization(
+            user_id=user.id,
+            organization_id=invitation.organization_id,
+        )
+
+        if existing is not None:
+            raise OrganizationMemberAlreadyExistsError
+
+        membership = self.invitation_repository.accept(
+            invitation=invitation,
+            user_id=user.id,
+            accepted_at=datetime.now(UTC),
+        )
+
+        return organization, membership
 
     def accept_invitation(
         self,

@@ -1,0 +1,68 @@
+name: Container CI
+
+on:
+  pull_request:
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "compose.yaml"
+      - ".github/workflows/container-ci.yml"
+
+  push:
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "compose.yaml"
+      - ".github/workflows/container-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  container-smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Prepare local environment
+        run: cp backend/.env.example backend/.env
+
+      - name: Build and start full stack
+        run: docker compose up -d --build
+
+      - name: Wait for frontend
+        run: |
+          for i in {1..30}; do
+            if curl --fail --silent http://127.0.0.1:5173/ > /dev/null; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker compose ps
+          docker compose logs
+          exit 1
+
+      - name: Verify API through Nginx
+        run: curl --fail --silent http://127.0.0.1:5173/api/ready
+
+      - name: Verify SPA deep-link fallback
+        run: curl --fail --silent http://127.0.0.1:5173/invite/smoke-token > /dev/null
+
+      - name: Verify migrations reached head
+        run: |
+          docker compose exec -T api /bin/sh -c '
+            export DATABASE_URL="postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB";
+            /app/.venv/bin/alembic current --check-heads
+          '
+
+      - name: Show logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - name: Stop containers
+        if: always()
+        run: docker compose down -v

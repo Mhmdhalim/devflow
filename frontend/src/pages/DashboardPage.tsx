@@ -5,14 +5,15 @@ import { api } from "../api/devflow";
 import { AppShell } from "../components/AppShell";
 import { Modal } from "../components/Modal";
 import { EmptyState, ErrorMessage, LoadingBlock } from "../components/StatusMessage";
-import type { Organization, Project } from "../types";
-import { slugify } from "../utils/format";
+import type { Organization, OrganizationInvitationDetail, Project } from "../types";
+import { formatDate, slugify } from "../utils/format";
 
 interface ProjectMap { [organizationId: string]: Project[] }
 
 export function DashboardPage() {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [projects, setProjects] = useState<ProjectMap>({});
+  const [invitations, setInvitations] = useState<OrganizationInvitationDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [health, setHealth] = useState<"checking" | "ready" | "degraded">("checking");
@@ -30,8 +31,12 @@ export function DashboardPage() {
     setError(null);
     setLoading(true);
     try {
-      const orgs = await api.organizations();
+      const [orgs, pendingInvitations] = await Promise.all([
+        api.organizations(),
+        api.myInvitations(),
+      ]);
       setOrganizations(orgs);
+      setInvitations(pendingInvitations);
       const entries = await Promise.all(
         orgs.map(async (org) => [org.id, await api.projects(org.id)] as const),
       );
@@ -54,6 +59,19 @@ export function DashboardPage() {
     () => Object.values(projects).reduce((total, list) => total + list.length, 0),
     [projects],
   );
+
+  const acceptInvitation = async (invitationId: string) => {
+    setSubmitting(true);
+    setError(null);
+    try {
+      await api.acceptInvitationById(invitationId);
+      await load();
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : "Unable to accept invitation");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   const submitOrganization = async (event: FormEvent) => {
     event.preventDefault();
@@ -108,6 +126,35 @@ export function DashboardPage() {
         <div className="stat-card"><span>Projects</span><strong>{projectCount}</strong><small>Across accessible workspaces</small></div>
         <div className="stat-card"><span>Backend</span><strong className={health === "ready" ? "status-good" : health === "degraded" ? "status-bad" : ""}>{health === "ready" ? "Ready" : health === "degraded" ? "Degraded" : "Checking"}</strong><small>/health + /ready</small></div>
       </section>
+
+      {invitations.length > 0 ? (
+        <section className="team-card invitation-inbox" aria-label="Pending invitations">
+          <div className="section-heading">
+            <div>
+              <h2>Invitations</h2>
+              <p>{invitations.length} workspace invitation{invitations.length === 1 ? "" : "s"} waiting for you.</p>
+            </div>
+          </div>
+          <div className="pending-list">
+            {invitations.map((invitation) => (
+              <div className="pending-row" key={invitation.id}>
+                <div>
+                  <strong>{invitation.organization_name}</strong>
+                  <span>Invited as {invitation.role} · expires {formatDate(invitation.expires_at)}</span>
+                </div>
+                <button
+                  className="button primary small"
+                  type="button"
+                  disabled={submitting}
+                  onClick={() => void acceptInvitation(invitation.id)}
+                >
+                  Accept
+                </button>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {loading ? <LoadingBlock label="Loading your workspaces…" /> : organizations.length === 0 ? (
         <EmptyState

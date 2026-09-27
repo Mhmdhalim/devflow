@@ -1,4 +1,4 @@
-const API_BASE = (import.meta.env.VITE_API_BASE ?? "").replace(/\/$/, "");
+const API_BASE = (import.meta.env.VITE_API_BASE || "/api").replace(/\/$/, "");
 const TOKEN_KEY = "devflow_access_token";
 
 export class ApiError extends Error {

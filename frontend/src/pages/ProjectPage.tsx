@@ -20,7 +20,9 @@ function priorityLabel(priority: IssuePriority) {
 }
 
 function errorMessage(error: unknown, fallback: string) {
-  return error instanceof ApiError ? error.message : fallback;
+  if (error instanceof ApiError) return error.message;
+  if (error instanceof Error) return error.message;
+  return fallback;
 }
 
 export function ProjectPage() {
@@ -100,11 +102,11 @@ export function ProjectPage() {
   }, [loadMetadata, loadBoard]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || !project || !organization) return;
     void api.issues(projectId, filterLabel || undefined)
       .then(setIssues)
       .catch((err) => setError(errorMessage(err, "Unable to filter issues")));
-  }, [filterLabel, projectId, loading]);
+  }, [filterLabel, projectId, loading, project, organization]);
 
   const usersById = useMemo(
     () => Object.fromEntries(users.map((item) => [item.user_id, item])),
@@ -261,7 +263,7 @@ export function ProjectPage() {
     <AppShell
       title={project.name}
       subtitle={`${organization.name} / ${project.key} · ${project.description || "No description"}`}
-      actions={<><button className="button secondary" onClick={() => setCreateLabelOpen(true)}>+ Label</button><button className="button primary" onClick={() => setCreateIssueOpen(true)}>+ New issue</button></>}
+      actions={<>{canManage ? <button className="button secondary" onClick={() => setCreateLabelOpen(true)}>+ Label</button> : null}<button className="button primary" onClick={() => setCreateIssueOpen(true)}>+ New issue</button></>}
     >
       <ErrorMessage message={error} />
 
@@ -312,7 +314,6 @@ export function ProjectPage() {
         <form className="stack-form" onSubmit={submitLabel}>
           <label className="field"><span>Name</span><input value={labelName} onChange={(event) => setLabelName(event.target.value)} required maxLength={50} placeholder="backend" /></label>
           <label className="field"><span>Color</span><div className="color-field"><input type="color" value={labelColor} onChange={(event) => setLabelColor(event.target.value)} /><input value={labelColor} onChange={(event) => setLabelColor(event.target.value)} pattern="#[0-9A-Fa-f]{6}" /></div></label>
-          {!canManage ? <p className="field-note">Your membership may not permit creating labels; the backend will enforce the organization role.</p> : null}
           <div className="form-actions"><button className="button secondary" type="button" onClick={() => setCreateLabelOpen(false)}>Cancel</button><button className="button primary" disabled={submitting} type="submit">Create label</button></div>
         </form>
       </Modal>

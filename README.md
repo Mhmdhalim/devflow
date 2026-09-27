@@ -1,107 +1,101 @@
 # DevFlow
 
-**DevFlow** is a production-oriented issue and project management platform built as a portfolio-grade backend engineering project.
+**DevFlow** is a full-stack issue and project management platform built as a portfolio-grade software engineering project.
 
-The project is designed to demonstrate practical skills relevant to Python/backend development, software engineering internships, working-student roles, and QA/test automation.
+It demonstrates practical backend and full-stack engineering skills with Python, FastAPI, PostgreSQL, SQLAlchemy, Alembic, React, TypeScript, Docker, automated tests, and CI.
 
-## Project goals
+## Core capabilities
 
-DevFlow is intentionally built like a real engineering product rather than a tutorial application.
-
-The backend v1 demonstrates:
-
-- REST API design with FastAPI
-- PostgreSQL data modelling with SQLAlchemy
-- Alembic database migrations
-- Repository and service-layer architecture
-- JWT authentication and authorization
-- Organization membership and role-based access
-- Project, issue, comment, and label workflows
-- Automated unit, route, and PostgreSQL integration testing
-- Dockerized local infrastructure
-- GitHub Actions CI
-- Ruff, mypy, pytest, and pre-commit quality gates
-- Engineering documentation and pull-request-based development
-
-Features such as Redis, background workers, notifications, object storage, audit logs, and advanced search are intentionally reserved for future versions.
+- JWT registration, login, and authenticated sessions
+- Organizations/workspaces with owner, admin, and member roles
+- Secure organization invitations and pending-invitation inbox
+- Projects scoped to organizations
+- Project-scoped sequential issue numbers
+- Issue creation, updates, assignees, priorities, and statuses
+- Comments and project labels
+- Label assignment and issue filtering
+- Backend authorization on organization and project boundaries
+- React frontend with protected routes
+- PostgreSQL persistence and Alembic migrations
+- Docker Compose full-stack environment
+- GitHub Actions backend, browser E2E, and container smoke CI
 
 ## Architecture
 
-DevFlow is implemented as a **modular monolith**.
+DevFlow is a modular monolith with a separate browser client:
 
 ```text
-Client
+Browser
+  ↓
+React + TypeScript
   ↓
 FastAPI
   ↓
-Router
-  ↓
-Service
-  ↓
-Repository
+Router → Service → Repository
   ↓
 SQLAlchemy
   ↓
 PostgreSQL
 ```
 
-Detailed architecture documentation lives in `docs/architecture/`.
+Detailed architecture documentation lives in [docs/architecture](docs/architecture/).
 
 ![DevFlow system architecture](docs/architecture/diagrams/01-system-architecture.svg)
 
 ## Documentation
 
+- [API](docs/api/README.md)
 - [Architecture](docs/architecture/overview.md)
 - [Database design](docs/database/database-design.md)
+- [Deployment](docs/deployment/README.md)
+- [QA and testing](docs/qa/README.md)
 - [Engineering workflow](docs/planning/engineering-workflow.md)
 - [Architecture decisions](docs/decisions/)
 
-## Current status
+## Local full-stack run
 
-**Backend v1: Complete.**
+Create the local environment file once:
 
-## Local infrastructure
+```bash
+cp backend/.env.example backend/.env
+```
 
-The FastAPI application and PostgreSQL database can run together with Docker Compose:
+Then start PostgreSQL, FastAPI, and the production-style Nginx frontend:
 
 ```bash
 docker compose up --build
 ```
 
-The API is available at:
+Open:
 
 ```text
-http://localhost:8000
+Frontend:  http://localhost:5173
+API:       http://localhost:8000
+API docs:  http://localhost:8000/docs
+Health:    http://localhost:8000/health
+Readiness: http://localhost:8000/ready
 ```
 
-Health endpoints:
+For frontend hot reload, run the backend/PostgreSQL locally and use `npm run dev` from `frontend/`.
 
-```text
-GET /health
-GET /ready
-```
+## Quality gates
 
-## Quality and CI
+Backend CI validates:
 
-Backend changes are validated using:
-
-- PostgreSQL 18
-- Alembic migrations against a clean database
-- pytest
-- real PostgreSQL integration testing
-- Ruff linting
-- Ruff formatting checks
+- PostgreSQL 18 migrations
+- pytest unit/route/integration tests
+- Ruff lint and formatting
 - mypy
-- pre-commit hooks
 
-GitHub Actions runs the backend quality gates for backend changes.
+E2E CI validates browser workflows against a real FastAPI + PostgreSQL stack, including the two-user invitation journey.
 
-## Development principle
+Container CI builds the Docker Compose stack and checks Nginx → FastAPI routing, readiness, SPA deep links, and migrations.
+
+## Development workflow
 
 ```text
 Requirement
 → GitHub Issue
-→ Design
 → Branch
 → Implementation
 → Tests
@@ -111,3 +105,4 @@ Requirement
 → Documentation
 ```
 
+See [CONTRIBUTING.md](CONTRIBUTING.md) for the branch and pull-request workflow.

@@ -63,6 +63,30 @@ class OrganizationInvitationRepository:
 
         return self.db.scalars(statement).first()
 
+    def get_by_id(
+        self,
+        invitation_id: uuid.UUID,
+    ) -> OrganizationInvitation | None:
+        return self.db.get(OrganizationInvitation, invitation_id)
+
+    def list_pending_for_email(
+        self,
+        *,
+        email: str,
+        now: datetime,
+    ) -> list[OrganizationInvitation]:
+        statement = (
+            select(OrganizationInvitation)
+            .where(
+                OrganizationInvitation.email == email,
+                OrganizationInvitation.accepted_at.is_(None),
+                OrganizationInvitation.expires_at > now,
+            )
+            .order_by(OrganizationInvitation.created_at)
+        )
+
+        return list(self.db.scalars(statement).all())
+
     def list_pending_for_organization(
         self,
         *,
