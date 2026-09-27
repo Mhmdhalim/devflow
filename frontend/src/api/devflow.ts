@@ -31,8 +31,6 @@ export const api = {
     }, false),
 
   me: () => apiRequest<User>("/auth/me"),
-  users: () => apiRequest<User[]>("/users"),
-
   health: () => apiRequest<HealthResponse>("/health", {}, false),
   ready: () => apiRequest<HealthResponse>("/ready", {}, false),
 
