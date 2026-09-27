@@ -67,10 +67,10 @@ The following capabilities are intentionally outside backend v1:
 
 ## System architecture
 
-![DevFlow system architecture](diagrams/01-system-architecture.png)
+![DevFlow system architecture](diagrams/01-system-architecture.svg)
 
 ## API to database flow
 
-![DevFlow API to database flow](diagrams/02-api-database-flow.png)
+![DevFlow API to database flow](diagrams/02-api-database-flow.svg)
 
-The editable source files remain available beside each PNG as `.drawio` files.
+The editable source files remain available beside each SVG as `.drawio` files.
