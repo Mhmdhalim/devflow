@@ -22,6 +22,30 @@ services:
       timeout: 5s
       retries: 5
 
+  api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+
+    container_name: devflow-api
+
+    env_file:
+      - ./backend/.env
+
+    command:
+      - /bin/sh
+      - -c
+      - >
+        export DATABASE_URL="postgresql+psycopg://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@postgres:5432/$${POSTGRES_DB}";
+        exec /app/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port 8000
+
+    ports:
+      - "8000:8000"
+
+    depends_on:
+      postgres:
+        condition: service_healthy
+
 volumes:
   postgres_data:
     name: devflow_pgdata
