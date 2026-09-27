@@ -61,3 +61,15 @@ class IssueRepository:
         )
 
         return list(self.db.scalars(statement).all())
+
+    def get_by_number(
+        self,
+        project_id: uuid.UUID,
+        issue_number: int,
+    ) -> Issue | None:
+        statement = select(Issue).where(
+            Issue.project_id == project_id,
+            Issue.number == issue_number,
+        )
+
+        return self.db.scalars(statement).first()

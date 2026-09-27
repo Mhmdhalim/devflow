@@ -12,6 +12,7 @@ from app.repositories.membership import MembershipRepository
 from app.repositories.project import ProjectRepository
 from app.schemas.issue import IssueCreate, IssueRead
 from app.services.issue import (
+    IssueNotFoundError,
     IssuePermissionDeniedError,
     IssueProjectNotFoundError,
     IssueService,
@@ -100,3 +101,44 @@ def list_issues(
         ) from exc
 
     return [IssueRead.model_validate(issue) for issue in issues]
+
+
+@router.get(
+    "/{issue_number}",
+    response_model=IssueRead,
+)
+def get_issue(
+    project_id: uuid.UUID,
+    issue_number: int,
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+    service: IssueService = Depends(get_issue_service),
+) -> IssueRead:
+    try:
+        issue = service.get_issue(
+            project_id=project_id,
+            issue_number=issue_number,
+            user_id=current_user.id,
+        )
+
+    except IssueProjectNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        ) from exc
+
+    except IssuePermissionDeniedError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You do not have access to this project",
+        ) from exc
+
+    except IssueNotFoundError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Issue not found",
+        ) from exc
+
+    return IssueRead.model_validate(issue)

@@ -10,6 +10,7 @@ from app.main import app
 from app.models.issue import Issue
 from app.models.user import User
 from app.services.issue import (
+    IssueNotFoundError,
     IssuePermissionDeniedError,
     IssueProjectNotFoundError,
 )
@@ -264,3 +265,108 @@ def test_list_issues_when_project_missing() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 404
+
+
+def test_get_issue() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    issue = make_issue(
+        project_id,
+        user.id,
+    )
+    issue.number = 12
+
+    service.get_issue.return_value = issue
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+
+    body = response.json()
+
+    assert body["number"] == 12
+    assert body["project_id"] == str(project_id)
+
+    service.get_issue.assert_called_once_with(
+        project_id=project_id,
+        issue_number=12,
+        user_id=user.id,
+    )
+
+
+def test_get_issue_requires_authentication() -> None:
+    service = MagicMock()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+    service.get_issue.assert_not_called()
+
+
+def test_get_issue_forbidden() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.get_issue.side_effect = IssuePermissionDeniedError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 403
+
+
+def test_get_issue_when_issue_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.get_issue.side_effect = IssueNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/99")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Issue not found")
+
+
+def test_get_issue_when_project_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.get_issue.side_effect = IssueProjectNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.get(f"/projects/{project_id}/issues/12")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == ("Project not found")

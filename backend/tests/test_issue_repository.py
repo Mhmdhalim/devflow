@@ -129,3 +129,45 @@ def test_list_for_project() -> None:
 
     assert result == issues
     db.scalars.assert_called_once()
+
+
+def test_get_by_number() -> None:
+    db = MagicMock()
+    repository = IssueRepository(db)
+
+    project_id = uuid.uuid4()
+
+    expected_issue = Issue(
+        project_id=project_id,
+        number=12,
+        title="Fix authentication",
+        description=None,
+        status="todo",
+        priority="high",
+        reporter_id=uuid.uuid4(),
+        assignee_id=None,
+    )
+
+    db.scalars.return_value.first.return_value = expected_issue
+
+    result = repository.get_by_number(
+        project_id=project_id,
+        issue_number=12,
+    )
+
+    assert result is expected_issue
+    db.scalars.assert_called_once()
+
+
+def test_get_by_number_returns_none() -> None:
+    db = MagicMock()
+    repository = IssueRepository(db)
+
+    db.scalars.return_value.first.return_value = None
+
+    result = repository.get_by_number(
+        project_id=uuid.uuid4(),
+        issue_number=99,
+    )
+
+    assert result is None
