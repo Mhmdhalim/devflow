@@ -23,6 +23,10 @@ class IssueNotFoundError(Exception):
     pass
 
 
+class IssueAssigneeNotMemberError(Exception):
+    pass
+
+
 class IssueService:
     def __init__(
         self,
@@ -54,15 +58,36 @@ class IssueService:
 
         return project
 
+    def _validate_assignee(
+        self,
+        assignee_id: uuid.UUID | None,
+        organization_id: uuid.UUID,
+    ) -> None:
+        if assignee_id is None:
+            return
+
+        membership = self.membership_repository.get_for_user_and_organization(
+            user_id=assignee_id,
+            organization_id=organization_id,
+        )
+
+        if membership is None:
+            raise IssueAssigneeNotMemberError
+
     def create_issue(
         self,
         data: IssueCreate,
         project_id: uuid.UUID,
         reporter_id: uuid.UUID,
     ) -> Issue:
-        self._get_project_for_member(
+        project = self._get_project_for_member(
             project_id=project_id,
             user_id=reporter_id,
+        )
+
+        self._validate_assignee(
+            assignee_id=data.assignee_id,
+            organization_id=project.organization_id,
         )
 
         return self.issue_repository.create_with_next_number(
@@ -118,7 +143,7 @@ class IssueService:
         issue_number: int,
         user_id: uuid.UUID,
     ) -> Issue:
-        self._get_project_for_member(
+        project = self._get_project_for_member(
             project_id=project_id,
             user_id=user_id,
         )
@@ -130,6 +155,12 @@ class IssueService:
 
         if issue is None:
             raise IssueNotFoundError
+
+        if "assignee_id" in data.model_fields_set:
+            self._validate_assignee(
+                assignee_id=data.assignee_id,
+                organization_id=project.organization_id,
+            )
 
         return self.issue_repository.update(
             issue=issue,
