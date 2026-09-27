@@ -1,258 +1,345 @@
 import uuid
-from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
-from fastapi.testclient import TestClient
+import pytest
 
-from app.api.dependencies.auth import get_current_user
-from app.api.routes.labels import get_label_service
-from app.main import app
 from app.models.label import Label
-from app.models.user import User
+from app.models.membership import Membership
+from app.models.project import Project
+from app.schemas.label import LabelCreate
 from app.services.label import (
     LabelAlreadyExistsError,
     LabelPermissionDeniedError,
     LabelProjectNotFoundError,
+    LabelService,
 )
 
-client = TestClient(app)
 
+def make_service() -> tuple[
+    LabelService,
+    MagicMock,
+    MagicMock,
+    MagicMock,
+]:
+    label_repository = MagicMock()
+    project_repository = MagicMock()
+    membership_repository = MagicMock()
 
-def make_user() -> User:
-    user = User(
-        email="alice@example.com",
-        full_name="Alice",
-        hashed_password="not-used",
-        is_active=True,
-    )
-    user.id = uuid.uuid4()
-
-    return user
-
-
-def make_label(
-    project_id: uuid.UUID,
-    name: str = "backend",
-) -> Label:
-    now = datetime.now(UTC)
-
-    label = Label(
-        project_id=project_id,
-        name=name,
-        color="#2563EB",
+    service = LabelService(
+        label_repository,
+        project_repository,
+        membership_repository,
     )
 
-    label.id = uuid.uuid4()
-    label.created_at = now
-    label.updated_at = now
-
-    return label
+    return (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    )
 
 
 def test_create_label() -> None:
-    service = MagicMock()
-    user = make_user()
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
     project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
-    label = make_label(project_id)
-
-    service.create_label.return_value = label
-
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.post(
-        f"/projects/{project_id}/labels",
-        json={
-            "name": "backend",
-            "color": "#2563EB",
-        },
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
     )
 
-    app.dependency_overrides.clear()
-
-    assert response.status_code == 201
-
-    body = response.json()
-
-    assert body["name"] == "backend"
-    assert body["color"] == "#2563EB"
-    assert body["project_id"] == str(project_id)
-
-    call = service.create_label.call_args
-
-    assert call.kwargs["project_id"] == project_id
-    assert call.kwargs["user_id"] == user.id
-    assert call.kwargs["data"].name == "backend"
-
-
-def test_create_label_requires_authentication() -> None:
-    service = MagicMock()
-    project_id = uuid.uuid4()
-
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.post(
-        f"/projects/{project_id}/labels",
-        json={
-            "name": "backend",
-        },
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="owner",
     )
 
-    app.dependency_overrides.clear()
+    label_repository.get_by_name.return_value = None
 
-    assert response.status_code == 401
-    service.create_label.assert_not_called()
-
-
-def test_create_label_forbidden() -> None:
-    service = MagicMock()
-    user = make_user()
-    project_id = uuid.uuid4()
-
-    service.create_label.side_effect = LabelPermissionDeniedError
-
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.post(
-        f"/projects/{project_id}/labels",
-        json={
-            "name": "backend",
-        },
+    data = LabelCreate(
+        name="backend",
+        color="#2563EB",
     )
 
-    app.dependency_overrides.clear()
-
-    assert response.status_code == 403
-
-
-def test_create_label_when_project_missing() -> None:
-    service = MagicMock()
-    user = make_user()
-    project_id = uuid.uuid4()
-
-    service.create_label.side_effect = LabelProjectNotFoundError
-
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.post(
-        f"/projects/{project_id}/labels",
-        json={
-            "name": "backend",
-        },
+    expected_label = Label(
+        project_id=project_id,
+        name=data.name,
+        color=data.color,
     )
 
-    app.dependency_overrides.clear()
+    label_repository.create.return_value = expected_label
 
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Project not found"
+    result = service.create_label(
+        data=data,
+        project_id=project_id,
+        user_id=user_id,
+    )
+
+    assert result is expected_label
+
+    label_repository.create.assert_called_once_with(
+        data=data,
+        project_id=project_id,
+    )
+
+
+def test_create_label_when_user_is_admin() -> None:
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
+    project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="admin",
+    )
+
+    label_repository.get_by_name.return_value = None
+
+    data = LabelCreate(
+        name="backend",
+        color="#2563EB",
+    )
+
+    expected_label = Label(
+        project_id=project_id,
+        name=data.name,
+        color=data.color,
+    )
+
+    label_repository.create.return_value = expected_label
+
+    result = service.create_label(
+        data=data,
+        project_id=project_id,
+        user_id=user_id,
+    )
+
+    assert result is expected_label
+    label_repository.create.assert_called_once_with(
+        data=data,
+        project_id=project_id,
+    )
 
 
 def test_create_label_when_name_exists() -> None:
-    service = MagicMock()
-    user = make_user()
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
     project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
-    service.create_label.side_effect = LabelAlreadyExistsError
-
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.post(
-        f"/projects/{project_id}/labels",
-        json={
-            "name": "backend",
-        },
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
     )
 
-    app.dependency_overrides.clear()
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="owner",
+    )
 
-    assert response.status_code == 409
+    label_repository.get_by_name.return_value = Label(
+        project_id=project_id,
+        name="backend",
+        color=None,
+    )
+
+    with pytest.raises(LabelAlreadyExistsError):
+        service.create_label(
+            data=LabelCreate(
+                name="backend",
+            ),
+            project_id=project_id,
+            user_id=user_id,
+        )
+
+    label_repository.create.assert_not_called()
 
 
-def test_list_labels() -> None:
-    service = MagicMock()
-    user = make_user()
+def test_create_label_when_user_is_regular_member() -> None:
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
     project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
-    service.list_labels.return_value = [
-        make_label(
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="member",
+    )
+
+    with pytest.raises(LabelPermissionDeniedError):
+        service.create_label(
+            data=LabelCreate(
+                name="backend",
+            ),
+            project_id=project_id,
+            user_id=user_id,
+        )
+
+    label_repository.get_by_name.assert_not_called()
+    label_repository.create.assert_not_called()
+
+
+def test_create_label_when_project_missing() -> None:
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
+    project_repository.get_by_id.return_value = None
+
+    with pytest.raises(LabelProjectNotFoundError):
+        service.create_label(
+            data=LabelCreate(
+                name="backend",
+            ),
+            project_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
+        )
+
+    membership_repository.get_for_user_and_organization.assert_not_called()
+    label_repository.create.assert_not_called()
+
+
+def test_list_labels_when_user_is_member() -> None:
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
+    project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="member",
+    )
+
+    expected_labels = [
+        Label(
             project_id=project_id,
             name="backend",
-        ),
-        make_label(
-            project_id=project_id,
-            name="bug",
-        ),
+            color="#2563EB",
+        )
     ]
 
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
+    label_repository.list_for_project.return_value = expected_labels
 
-    response = client.get(f"/projects/{project_id}/labels")
-
-    app.dependency_overrides.clear()
-
-    assert response.status_code == 200
-
-    body = response.json()
-
-    assert len(body) == 2
-    assert body[0]["name"] == "backend"
-    assert body[1]["name"] == "bug"
-
-    service.list_labels.assert_called_once_with(
+    result = service.list_labels(
         project_id=project_id,
-        user_id=user.id,
+        user_id=user_id,
     )
 
+    assert result == expected_labels
 
-def test_list_labels_requires_authentication() -> None:
-    service = MagicMock()
+    label_repository.list_for_project.assert_called_once_with(project_id)
+
+
+def test_list_labels_when_user_is_not_member() -> None:
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
+
     project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
 
-    app.dependency_overrides[get_label_service] = lambda: service
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
 
-    response = client.get(f"/projects/{project_id}/labels")
+    membership_repository.get_for_user_and_organization.return_value = None
 
-    app.dependency_overrides.clear()
+    with pytest.raises(LabelPermissionDeniedError):
+        service.list_labels(
+            project_id=project_id,
+            user_id=user_id,
+        )
 
-    assert response.status_code == 401
-    service.list_labels.assert_not_called()
-
-
-def test_list_labels_forbidden() -> None:
-    service = MagicMock()
-    user = make_user()
-    project_id = uuid.uuid4()
-
-    service.list_labels.side_effect = LabelPermissionDeniedError
-
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
-
-    response = client.get(f"/projects/{project_id}/labels")
-
-    app.dependency_overrides.clear()
-
-    assert response.status_code == 403
+    label_repository.list_for_project.assert_not_called()
 
 
 def test_list_labels_when_project_missing() -> None:
-    service = MagicMock()
-    user = make_user()
-    project_id = uuid.uuid4()
+    (
+        service,
+        label_repository,
+        project_repository,
+        membership_repository,
+    ) = make_service()
 
-    service.list_labels.side_effect = LabelProjectNotFoundError
+    project_repository.get_by_id.return_value = None
 
-    app.dependency_overrides[get_current_user] = lambda: user
-    app.dependency_overrides[get_label_service] = lambda: service
+    with pytest.raises(LabelProjectNotFoundError):
+        service.list_labels(
+            project_id=uuid.uuid4(),
+            user_id=uuid.uuid4(),
+        )
 
-    response = client.get(f"/projects/{project_id}/labels")
-
-    app.dependency_overrides.clear()
-
-    assert response.status_code == 404
-    assert response.json()["detail"] == "Project not found"
+    membership_repository.get_for_user_and_organization.assert_not_called()
+    label_repository.list_for_project.assert_not_called()
