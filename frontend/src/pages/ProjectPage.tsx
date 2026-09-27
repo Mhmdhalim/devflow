@@ -261,7 +261,7 @@ export function ProjectPage() {
     <AppShell
       title={project.name}
       subtitle={`${organization.name} / ${project.key} · ${project.description || "No description"}`}
-      actions={<><button className="button secondary" onClick={() => setCreateLabelOpen(true)}>+ Label</button><button className="button primary" onClick={() => setCreateIssueOpen(true)}>+ New issue</button></>}
+      actions={<>{canManage ? <button className="button secondary" onClick={() => setCreateLabelOpen(true)}>+ Label</button> : null}<button className="button primary" onClick={() => setCreateIssueOpen(true)}>+ New issue</button></>}
     >
       <ErrorMessage message={error} />
 
