@@ -11,6 +11,7 @@ from app.schemas.issue import (
     IssueUpdate,
 )
 from app.services.issue import (
+    IssueAssigneeNotMemberError,
     IssueNotFoundError,
     IssuePermissionDeniedError,
     IssueProjectNotFoundError,
@@ -585,3 +586,48 @@ def test_list_issues_with_label() -> None:
         project_id=project_id,
         label_id=label_id,
     )
+
+
+def test_create_issue_rejects_assignee_outside_organization() -> None:
+    issue_repository = MagicMock()
+    project_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = IssueService(
+        issue_repository,
+        project_repository,
+        membership_repository,
+    )
+
+    project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    reporter_id = uuid.uuid4()
+    assignee_id = uuid.uuid4()
+
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.side_effect = [
+        Membership(
+            user_id=reporter_id,
+            organization_id=organization_id,
+            role="member",
+        ),
+        None,
+    ]
+
+    with pytest.raises(IssueAssigneeNotMemberError):
+        service.create_issue(
+            data=IssueCreate(
+                title="Assign work",
+                assignee_id=assignee_id,
+            ),
+            project_id=project_id,
+            reporter_id=reporter_id,
+        )
+
+    issue_repository.create_with_next_number.assert_not_called()
