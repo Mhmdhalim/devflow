@@ -3,7 +3,10 @@ from unittest.mock import MagicMock
 
 from app.models.issue import Issue
 from app.repositories.issue import IssueRepository
-from app.schemas.issue import IssueCreate
+from app.schemas.issue import (
+    IssueCreate,
+    IssueUpdate,
+)
 
 
 def make_data() -> IssueCreate:
@@ -171,3 +174,68 @@ def test_get_by_number_returns_none() -> None:
     )
 
     assert result is None
+
+
+def test_update_issue() -> None:
+    db = MagicMock()
+    repository = IssueRepository(db)
+
+    issue = Issue(
+        project_id=uuid.uuid4(),
+        number=12,
+        title="Old title",
+        description="Old description",
+        status="todo",
+        priority="medium",
+        reporter_id=uuid.uuid4(),
+        assignee_id=None,
+    )
+
+    data = IssueUpdate(
+        title="New title",
+        status="in_progress",
+        priority="high",
+    )
+
+    result = repository.update(
+        issue=issue,
+        data=data,
+    )
+
+    assert result is issue
+    assert issue.title == "New title"
+    assert issue.description == "Old description"
+    assert issue.status == "in_progress"
+    assert issue.priority == "high"
+
+    db.commit.assert_called_once()
+    db.refresh.assert_called_once_with(issue)
+
+
+def test_update_issue_can_clear_nullable_fields() -> None:
+    db = MagicMock()
+    repository = IssueRepository(db)
+
+    issue = Issue(
+        project_id=uuid.uuid4(),
+        number=12,
+        title="Issue",
+        description="Remove me",
+        status="todo",
+        priority="medium",
+        reporter_id=uuid.uuid4(),
+        assignee_id=uuid.uuid4(),
+    )
+
+    data = IssueUpdate(
+        description=None,
+        assignee_id=None,
+    )
+
+    repository.update(
+        issue=issue,
+        data=data,
+    )
+
+    assert issue.description is None
+    assert issue.assignee_id is None

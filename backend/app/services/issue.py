@@ -5,7 +5,10 @@ from app.models.project import Project
 from app.repositories.issue import IssueRepository
 from app.repositories.membership import MembershipRepository
 from app.repositories.project import ProjectRepository
-from app.schemas.issue import IssueCreate
+from app.schemas.issue import (
+    IssueCreate,
+    IssueUpdate,
+)
 
 
 class IssueProjectNotFoundError(Exception):
@@ -100,3 +103,28 @@ class IssueService:
             raise IssueNotFoundError
 
         return issue
+
+    def update_issue(
+        self,
+        data: IssueUpdate,
+        project_id: uuid.UUID,
+        issue_number: int,
+        user_id: uuid.UUID,
+    ) -> Issue:
+        self._get_project_for_member(
+            project_id=project_id,
+            user_id=user_id,
+        )
+
+        issue = self.issue_repository.get_by_number(
+            project_id=project_id,
+            issue_number=issue_number,
+        )
+
+        if issue is None:
+            raise IssueNotFoundError
+
+        return self.issue_repository.update(
+            issue=issue,
+            data=data,
+        )

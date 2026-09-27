@@ -5,7 +5,10 @@ from sqlalchemy.orm import Session
 
 from app.models.issue import Issue
 from app.models.project import Project
-from app.schemas.issue import IssueCreate
+from app.schemas.issue import (
+    IssueCreate,
+    IssueUpdate,
+)
 
 
 class IssueRepository:
@@ -73,3 +76,22 @@ class IssueRepository:
         )
 
         return self.db.scalars(statement).first()
+
+    def update(
+        self,
+        issue: Issue,
+        data: IssueUpdate,
+    ) -> Issue:
+        updates = data.model_dump(exclude_unset=True)
+
+        for field_name, value in updates.items():
+            setattr(
+                issue,
+                field_name,
+                value,
+            )
+
+        self.db.commit()
+        self.db.refresh(issue)
+
+        return issue
