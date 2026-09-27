@@ -56,7 +56,7 @@ jobs:
         run: |
           docker compose exec -T api /bin/sh -c '
             export DATABASE_URL="postgresql+psycopg://$POSTGRES_USER:$POSTGRES_PASSWORD@postgres:5432/$POSTGRES_DB";
-            /app/.venv/bin/alembic current
+            /app/.venv/bin/alembic current --check-heads
           '
 
       - name: Show logs on failure
