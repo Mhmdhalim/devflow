@@ -12,6 +12,7 @@ class UserCreate(BaseModel):
     @classmethod
     def normalize_full_name(cls, value: str) -> str:
         return value.strip()
+
     password: str = Field(min_length=8)
 
 
