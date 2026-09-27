@@ -72,3 +72,12 @@ class OrganizationRepository:
         rows = self.db.execute(statement).all()
 
         return [(organization, role) for organization, role in rows]
+
+    def get_by_id(
+        self,
+        organization_id: uuid.UUID,
+    ) -> Organization | None:
+        return self.db.get(
+            Organization,
+            organization_id,
+        )

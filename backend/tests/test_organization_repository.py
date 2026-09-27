@@ -105,3 +105,26 @@ def test_list_for_user() -> None:
     ]
 
     db.execute.assert_called_once()
+
+
+def test_get_by_id() -> None:
+    db = MagicMock()
+    repository = OrganizationRepository(db)
+
+    organization_id = uuid.uuid4()
+
+    expected_organization = Organization(
+        name="DevFlow",
+        slug="devflow",
+    )
+
+    db.get.return_value = expected_organization
+
+    result = repository.get_by_id(organization_id)
+
+    assert result is expected_organization
+
+    db.get.assert_called_once_with(
+        Organization,
+        organization_id,
+    )
