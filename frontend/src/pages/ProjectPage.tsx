@@ -172,7 +172,9 @@ export function ProjectPage() {
       setIssuePriority("medium");
       setIssueAssignee("");
       setCreateIssueOpen(false);
-      await loadBoard(filterLabel);
+      if (organization) {
+        await loadBoard(organization.id, filterLabel);
+      }
     } catch (err) {
       setError(errorMessage(err, "Unable to create issue"));
     } finally {
@@ -239,7 +241,9 @@ export function ProjectPage() {
       if (assigned) await api.removeLabel(projectId, selectedIssue.number, label.id);
       else await api.assignLabel(projectId, selectedIssue.number, label.id);
       setSelectedLabels(await api.issueLabels(projectId, selectedIssue.number));
-      await loadBoard(filterLabel);
+      if (organization) {
+        await loadBoard(organization.id, filterLabel);
+      }
     } catch (err) {
       setError(errorMessage(err, "Unable to change issue labels"));
     }
