@@ -160,7 +160,9 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
 
   await expect(outsiderPage.getByRole("heading", { name: workspaceName })).toHaveCount(0);
   await outsiderPage.goto(projectHref!);
-  await expect(outsiderPage.getByText("Unable to load this project")).toBeVisible();
+  await expect(outsiderPage.getByRole("heading", { name: "Project" })).toBeVisible();
+  await expect(outsiderPage.getByRole("heading", { name: projectName })).toHaveCount(0);
+  await expect(outsiderPage.getByRole("link", { name: "Back to workspaces" })).toBeVisible();
 
   await outsiderContext.close();
 });
