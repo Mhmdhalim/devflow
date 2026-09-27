@@ -186,3 +186,53 @@ def test_accept_invitation() -> None:
     body = response.json()
     assert body["id"] == str(organization.id)
     assert body["role"] == "member"
+
+
+def test_list_my_invitations() -> None:
+    service = MagicMock()
+    user = make_user("member@example.com")
+    organization = make_organization()
+    invitation = make_invitation(organization.id, uuid.uuid4())
+
+    service.list_user_invitations.return_value = [(invitation, organization)]
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_organization_access_service] = lambda: service
+
+    response = client.get("/invitations")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body[0]["organization_name"] == "Acme"
+    assert body[0]["email"] == "member@example.com"
+    service.list_user_invitations.assert_called_once_with(user_email=user.email)
+
+
+def test_accept_invitation_by_id() -> None:
+    service = MagicMock()
+    user = make_user("member@example.com")
+    organization = make_organization()
+    invitation_id = uuid.uuid4()
+    membership = Membership(
+        user_id=user.id,
+        organization_id=organization.id,
+        role="member",
+    )
+
+    service.accept_invitation_by_id.return_value = (organization, membership)
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_organization_access_service] = lambda: service
+
+    response = client.post(f"/invitations/by-id/{invitation_id}/accept")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert response.json()["id"] == str(organization.id)
+    service.accept_invitation_by_id.assert_called_once_with(
+        invitation_id=invitation_id,
+        user=user,
+    )
