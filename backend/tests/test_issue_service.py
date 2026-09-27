@@ -4,9 +4,11 @@ from unittest.mock import MagicMock
 import pytest
 
 from app.models.issue import Issue
+from app.models.membership import Membership
 from app.models.project import Project
 from app.schemas.issue import IssueCreate
 from app.services.issue import (
+    IssuePermissionDeniedError,
     IssueProjectNotFoundError,
     IssueService,
 )
@@ -23,20 +25,29 @@ def make_data() -> IssueCreate:
 def test_create_issue() -> None:
     issue_repository = MagicMock()
     project_repository = MagicMock()
+    membership_repository = MagicMock()
 
     service = IssueService(
         issue_repository,
         project_repository,
+        membership_repository,
     )
 
     project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
     reporter_id = uuid.uuid4()
 
     project_repository.get_by_id.return_value = Project(
-        organization_id=uuid.uuid4(),
+        organization_id=organization_id,
         name="Backend",
         key="DEV",
         description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=reporter_id,
+        organization_id=organization_id,
+        role="member",
     )
 
     expected_issue = Issue(
@@ -64,6 +75,11 @@ def test_create_issue() -> None:
 
     project_repository.get_by_id.assert_called_once_with(project_id)
 
+    membership_repository.get_for_user_and_organization.assert_called_once_with(
+        user_id=reporter_id,
+        organization_id=organization_id,
+    )
+
     issue_repository.create_with_next_number.assert_called_once_with(
         data=data,
         project_id=project_id,
@@ -74,10 +90,12 @@ def test_create_issue() -> None:
 def test_create_issue_when_project_missing() -> None:
     issue_repository = MagicMock()
     project_repository = MagicMock()
+    membership_repository = MagicMock()
 
     service = IssueService(
         issue_repository,
         project_repository,
+        membership_repository,
     )
 
     project_id = uuid.uuid4()
@@ -86,6 +104,41 @@ def test_create_issue_when_project_missing() -> None:
     project_repository.get_by_id.return_value = None
 
     with pytest.raises(IssueProjectNotFoundError):
+        service.create_issue(
+            data=make_data(),
+            project_id=project_id,
+            reporter_id=reporter_id,
+        )
+
+    membership_repository.get_for_user_and_organization.assert_not_called()
+    issue_repository.create_with_next_number.assert_not_called()
+
+
+def test_create_issue_when_user_is_not_member() -> None:
+    issue_repository = MagicMock()
+    project_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = IssueService(
+        issue_repository,
+        project_repository,
+        membership_repository,
+    )
+
+    project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    reporter_id = uuid.uuid4()
+
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = None
+
+    with pytest.raises(IssuePermissionDeniedError):
         service.create_issue(
             data=make_data(),
             project_id=project_id,
