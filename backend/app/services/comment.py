@@ -81,3 +81,17 @@ class CommentService:
             issue_id=issue.id,
             author_id=author_id,
         )
+
+    def list_comments(
+        self,
+        project_id: uuid.UUID,
+        issue_number: int,
+        user_id: uuid.UUID,
+    ) -> list[Comment]:
+        issue = self._get_issue_for_member(
+            project_id=project_id,
+            issue_number=issue_number,
+            user_id=user_id,
+        )
+
+        return self.comment_repository.list_for_issue(issue.id)
