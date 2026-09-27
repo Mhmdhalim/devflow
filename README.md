@@ -47,7 +47,7 @@ PostgreSQL
 
 Detailed architecture documentation lives in `docs/architecture/`.
 
-![DevFlow system architecture](docs/architecture/diagrams/01-system-architecture.png)
+![DevFlow system architecture](docs/architecture/diagrams/01-system-architecture.svg)
 
 ## Documentation
 
