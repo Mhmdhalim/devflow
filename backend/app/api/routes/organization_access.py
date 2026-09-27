@@ -187,6 +187,60 @@ def list_pending_invitations(
 
 
 @router.get(
+    "/invitations",
+    response_model=list[OrganizationInvitationDetail],
+)
+def list_my_invitations(
+    current_user: Annotated[User, Depends(get_current_user)],
+    service: OrganizationAccessService = Depends(get_organization_access_service),
+) -> list[OrganizationInvitationDetail]:
+    rows = service.list_user_invitations(user_email=current_user.email)
+
+    return [
+        OrganizationInvitationDetail(
+            **OrganizationInvitationRead.model_validate(invitation).model_dump(),
+            organization_name=organization.name,
+            organization_slug=organization.slug,
+        )
+        for invitation, organization in rows
+    ]
+
+
+@router.post(
+    "/invitations/by-id/{invitation_id}/accept",
+    response_model=OrganizationMembershipRead,
+)
+def accept_invitation_by_id(
+    invitation_id: uuid.UUID,
+    current_user: Annotated[User, Depends(get_current_user)],
+    service: OrganizationAccessService = Depends(get_organization_access_service),
+) -> OrganizationMembershipRead:
+    try:
+        organization, membership = service.accept_invitation_by_id(
+            invitation_id=invitation_id,
+            user=current_user,
+        )
+    except (
+        OrganizationAccessNotFoundError,
+        OrganizationInvitationNotFoundError,
+        OrganizationInvitationExpiredError,
+        OrganizationInvitationAlreadyAcceptedError,
+        OrganizationInvitationEmailMismatchError,
+        OrganizationMemberAlreadyExistsError,
+    ) as exc:
+        _raise_invitation_error(exc)
+
+    return OrganizationMembershipRead(
+        id=organization.id,
+        name=organization.name,
+        slug=organization.slug,
+        role=membership.role,
+        created_at=organization.created_at,
+        updated_at=organization.updated_at,
+    )
+
+
+@router.get(
     "/invitations/{token}",
     response_model=OrganizationInvitationDetail,
 )
