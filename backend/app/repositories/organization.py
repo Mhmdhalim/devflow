@@ -49,3 +49,26 @@ class OrganizationRepository:
             raise
 
         return organization
+
+    def list_for_user(
+        self,
+        user_id: uuid.UUID,
+    ) -> list[tuple[Organization, str]]:
+        statement = (
+            select(
+                Organization,
+                Membership.role,
+            )
+            .join(
+                Membership,
+                Membership.organization_id == Organization.id,
+            )
+            .where(
+                Membership.user_id == user_id,
+            )
+            .order_by(Organization.created_at)
+        )
+
+        rows = self.db.execute(statement).all()
+
+        return [(organization, role) for organization, role in rows]

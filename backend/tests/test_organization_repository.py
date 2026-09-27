@@ -75,3 +75,33 @@ def test_create_with_membership() -> None:
     db.flush.assert_called_once()
     db.commit.assert_called_once()
     db.refresh.assert_called_once_with(added_organization)
+
+
+def test_list_for_user() -> None:
+    db = MagicMock()
+    repository = OrganizationRepository(db)
+
+    user_id = uuid.uuid4()
+
+    organization = Organization(
+        name="DevFlow",
+        slug="devflow",
+    )
+
+    db.execute.return_value.all.return_value = [
+        (
+            organization,
+            "owner",
+        )
+    ]
+
+    result = repository.list_for_user(user_id)
+
+    assert result == [
+        (
+            organization,
+            "owner",
+        )
+    ]
+
+    db.execute.assert_called_once()

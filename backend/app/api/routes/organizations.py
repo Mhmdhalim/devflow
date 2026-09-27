@@ -7,7 +7,11 @@ from app.api.dependencies.auth import get_current_user
 from app.db.session import get_db
 from app.models.user import User
 from app.repositories.organization import OrganizationRepository
-from app.schemas.organization import OrganizationCreate, OrganizationRead
+from app.schemas.organization import (
+    OrganizationCreate,
+    OrganizationMembershipRead,
+    OrganizationRead,
+)
 from app.services.organization import (
     OrganizationAlreadyExistsError,
     OrganizationService,
@@ -52,3 +56,29 @@ def create_organization(
         ) from exc
 
     return OrganizationRead.model_validate(organization)
+
+
+@router.get(
+    "",
+    response_model=list[OrganizationMembershipRead],
+)
+def list_organizations(
+    current_user: Annotated[
+        User,
+        Depends(get_current_user),
+    ],
+    service: OrganizationService = Depends(get_organization_service),
+) -> list[OrganizationMembershipRead]:
+    memberships = service.list_user_organizations(current_user.id)
+
+    return [
+        OrganizationMembershipRead(
+            id=organization.id,
+            name=organization.name,
+            slug=organization.slug,
+            role=role,
+            created_at=organization.created_at,
+            updated_at=organization.updated_at,
+        )
+        for organization, role in memberships
+    ]

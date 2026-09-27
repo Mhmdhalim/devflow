@@ -69,3 +69,34 @@ def test_create_organization_with_existing_slug() -> None:
         )
 
     repository.create_with_membership.assert_not_called()
+
+
+def test_list_user_organizations() -> None:
+    repository = MagicMock()
+    service = OrganizationService(repository)
+
+    user_id = uuid.uuid4()
+
+    organizations = [
+        (
+            Organization(
+                name="DevFlow",
+                slug="devflow",
+            ),
+            "owner",
+        ),
+        (
+            Organization(
+                name="Backend Team",
+                slug="backend-team",
+            ),
+            "member",
+        ),
+    ]
+
+    repository.list_for_user.return_value = organizations
+
+    result = service.list_user_organizations(user_id)
+
+    assert result == organizations
+    repository.list_for_user.assert_called_once_with(user_id)
