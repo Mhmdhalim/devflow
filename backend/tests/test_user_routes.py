@@ -1,3 +1,4 @@
+from datetime import UTC, datetime
 from unittest.mock import MagicMock
 
 from fastapi.testclient import TestClient
@@ -18,6 +19,10 @@ def test_create_user() -> None:
         hashed_password="not-used",
         is_active=True,
     )
+    now = datetime.now(UTC)
+    user.id = __import__("uuid").uuid4()
+    user.created_at = now
+    user.updated_at = now
     service.create_user.return_value = user
 
     app.dependency_overrides[get_user_service] = lambda: service
