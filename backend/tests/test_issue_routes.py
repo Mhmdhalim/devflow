@@ -599,3 +599,19 @@ def test_update_issue_rejects_non_member_assignee() -> None:
     assert response.json()["detail"] == (
         "Assignee must be a member of the project organization"
     )
+
+
+def test_create_issue_rejects_whitespace_title() -> None:
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.post(
+        f"/projects/{project_id}/issues",
+        json={"title": "   "},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
