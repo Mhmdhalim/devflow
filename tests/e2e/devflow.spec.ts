@@ -106,6 +106,10 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
   await projectDialog.getByLabel("Key").fill(projectKey);
   await projectDialog.getByRole("button", { name: "Create project" }).click();
 
+  const sharedProjectLink = page.getByRole("link", { name: new RegExp(projectName) });
+  const projectHref = await sharedProjectLink.getAttribute("href");
+  expect(projectHref).toBeTruthy();
+
   await page.getByRole("link", { name: "Members" }).click();
   await page.getByLabel("Email address").fill(memberEmail);
   await page.getByLabel("Role").selectOption("member");
@@ -144,6 +148,21 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
   await expect(page.getByText(memberEmail)).toBeVisible();
 
   await memberContext.close();
+
+  const outsiderContext = await browser.newContext({ baseURL });
+  const outsiderPage = await outsiderContext.newPage();
+
+  await outsiderPage.goto("/register");
+  await outsiderPage.getByLabel("Full name").fill("Outside User");
+  await outsiderPage.getByLabel("Email address").fill(`outsider+${runId}@example.com`);
+  await outsiderPage.getByLabel("Password").fill("password123");
+  await outsiderPage.getByRole("button", { name: "Create account" }).click();
+
+  await expect(outsiderPage.getByRole("heading", { name: workspaceName })).toHaveCount(0);
+  await outsiderPage.goto(projectHref!);
+  await expect(outsiderPage.getByText("Unable to load this project")).toBeVisible();
+
+  await outsiderContext.close();
 });
 
 
