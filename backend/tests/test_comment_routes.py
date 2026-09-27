@@ -312,3 +312,19 @@ def test_list_comments_when_issue_missing() -> None:
 
     assert response.status_code == 404
     assert response.json()["detail"] == ("Issue not found")
+
+
+def test_create_comment_rejects_whitespace_body() -> None:
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    response = client.post(
+        f"/projects/{project_id}/issues/12/comments",
+        json={"body": "   "},
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 422
