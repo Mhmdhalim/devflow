@@ -176,3 +176,17 @@ def test_list_organizations() -> None:
     assert body[1]["role"] == "member"
 
     service.list_user_organizations.assert_called_once_with(user.id)
+
+
+def test_list_organizations_requires_authentication() -> None:
+    service = MagicMock()
+
+    app.dependency_overrides[get_organization_service] = lambda: service
+
+    response = client.get("/organizations")
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 401
+
+    service.list_user_organizations.assert_not_called()
