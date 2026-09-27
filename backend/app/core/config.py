@@ -1,15 +1,16 @@
 from functools import lru_cache
 
+from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     app_name: str = "DevFlow API"
     app_env: str = "development"
-    app_debug: bool = True
+    app_debug: bool = False
     database_url: str
 
-    secret_key: str
+    secret_key: str = Field(min_length=32)
     access_token_expire_minutes: int = 30
 
     model_config = SettingsConfigDict(
