@@ -116,7 +116,7 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
   await page.getByRole("button", { name: "Create invite" }).click();
 
   const inviteUrl = await page.locator(".invite-link-row input").inputValue();
-  expect(inviteUrl).toContain("/invitations/");
+  expect(inviteUrl).toContain("/invite/");
 
   const memberContext = await browser.newContext({ baseURL });
   const memberPage = await memberContext.newPage();
