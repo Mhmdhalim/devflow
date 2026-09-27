@@ -12,6 +12,7 @@ from app.models.user import User
 from app.services.comment import (
     CommentIssueNotFoundError,
     CommentPermissionDeniedError,
+    CommentProjectNotFoundError,
 )
 
 client = TestClient(app)
@@ -64,7 +65,6 @@ def test_create_comment() -> None:
     service.create_comment.return_value = comment
 
     app.dependency_overrides[get_current_user] = lambda: user
-
     app.dependency_overrides[get_comment_service] = lambda: service
 
     response = client.post(
@@ -82,14 +82,14 @@ def test_create_comment() -> None:
 
     assert body["issue_id"] == str(issue_id)
     assert body["author_id"] == str(user.id)
-    assert body["body"] == ("I am working on this.")
+    assert body["body"] == "I am working on this."
 
     call = service.create_comment.call_args
 
     assert call.kwargs["project_id"] == project_id
     assert call.kwargs["issue_number"] == 12
     assert call.kwargs["author_id"] == user.id
-    assert call.kwargs["data"].body == ("I am working on this.")
+    assert call.kwargs["data"].body == "I am working on this."
 
 
 def test_create_comment_requires_authentication() -> None:
@@ -119,7 +119,6 @@ def test_create_comment_forbidden() -> None:
     service.create_comment.side_effect = CommentPermissionDeniedError
 
     app.dependency_overrides[get_current_user] = lambda: user
-
     app.dependency_overrides[get_comment_service] = lambda: service
 
     response = client.post(
@@ -132,6 +131,29 @@ def test_create_comment_forbidden() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 403
+
+
+def test_create_comment_when_project_missing() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.create_comment.side_effect = CommentProjectNotFoundError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_comment_service] = lambda: service
+
+    response = client.post(
+        f"/projects/{project_id}/issues/12/comments",
+        json={
+            "body": "Hello",
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Project not found"
 
 
 def test_create_comment_when_issue_missing() -> None:
