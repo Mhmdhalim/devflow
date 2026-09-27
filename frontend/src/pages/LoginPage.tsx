@@ -8,12 +8,13 @@ export function LoginPage() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={from} replace />;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -21,7 +22,6 @@ export function LoginPage() {
     setSubmitting(true);
     try {
       await login(email.trim(), password);
-      const from = (location.state as { from?: string } | null)?.from ?? "/";
       navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to sign in");
@@ -86,7 +86,8 @@ export function LoginPage() {
             {submitting ? "Signing in…" : "Sign in"}
           </button>
           <p className="auth-switch">
-            New to DevFlow? <Link to="/register">Create an account</Link>
+            New to DevFlow?{" "}
+            <Link to="/register" state={{ from }}>Create an account</Link>
           </p>
         </form>
       </section>

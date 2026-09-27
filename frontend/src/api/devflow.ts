@@ -2,11 +2,16 @@ import { apiRequest } from "./client";
 import type {
   Comment,
   HealthResponse,
+  InvitationRole,
   Issue,
   IssuePriority,
   IssueStatus,
   Label,
   Organization,
+  OrganizationInvitation,
+  OrganizationInvitationCreated,
+  OrganizationInvitationDetail,
+  OrganizationMember,
   Project,
   TokenResponse,
   User,
@@ -37,6 +42,39 @@ export const api = {
       method: "POST",
       body: JSON.stringify(payload),
     }),
+
+  organizationMembers: (organizationId: string) =>
+    apiRequest<OrganizationMember[]>(
+      `/organizations/${organizationId}/members`,
+    ),
+
+  pendingInvitations: (organizationId: string) =>
+    apiRequest<OrganizationInvitation[]>(
+      `/organizations/${organizationId}/invitations`,
+    ),
+
+  createInvitation: (
+    organizationId: string,
+    payload: { email: string; role: InvitationRole },
+  ) =>
+    apiRequest<OrganizationInvitationCreated>(
+      `/organizations/${organizationId}/invitations`,
+      {
+        method: "POST",
+        body: JSON.stringify(payload),
+      },
+    ),
+
+  invitation: (token: string) =>
+    apiRequest<OrganizationInvitationDetail>(
+      `/invitations/${encodeURIComponent(token)}`,
+    ),
+
+  acceptInvitation: (token: string) =>
+    apiRequest<Organization>(
+      `/invitations/${encodeURIComponent(token)}/accept`,
+      { method: "POST" },
+    ),
 
   projects: (organizationId: string) =>
     apiRequest<Project[]>(`/organizations/${organizationId}/projects`),

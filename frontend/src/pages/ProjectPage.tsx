@@ -6,7 +6,7 @@ import { AppShell } from "../components/AppShell";
 import { Modal } from "../components/Modal";
 import { EmptyState, ErrorMessage, LoadingBlock } from "../components/StatusMessage";
 import { useAuth } from "../context/AuthContext";
-import type { Comment, Issue, IssuePriority, IssueStatus, Label, Organization, Project, User } from "../types";
+import type { Comment, Issue, IssuePriority, IssueStatus, Label, Organization, OrganizationMember, Project } from "../types";
 import { formatDate, initials } from "../utils/format";
 
 const columns: Array<{ status: IssueStatus; title: string; hint: string }> = [
@@ -30,7 +30,7 @@ export function ProjectPage() {
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [labels, setLabels] = useState<Label[]>([]);
-  const [users, setUsers] = useState<User[]>([]);
+  const [users, setUsers] = useState<OrganizationMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [filterLabel, setFilterLabel] = useState("");
@@ -64,17 +64,17 @@ export function ProjectPage() {
       if (found) {
         setProject(found);
         setOrganization(org);
-        return;
+        return org;
       }
     }
     throw new Error("Project not found in your accessible organizations");
   }, [projectId]);
 
-  const loadBoard = useCallback(async (labelId?: string) => {
+  const loadBoard = useCallback(async (organizationId: string, labelId?: string) => {
     const [issueList, labelList, userList] = await Promise.all([
       api.issues(projectId, labelId || undefined),
       api.labels(projectId),
-      api.users(),
+      api.organizationMembers(organizationId),
     ]);
     setIssues(issueList);
     setLabels(labelList);
@@ -87,7 +87,8 @@ export function ProjectPage() {
       setLoading(true);
       setError(null);
       try {
-        await Promise.all([loadMetadata(), loadBoard()]);
+        const currentOrganization = await loadMetadata();
+        await loadBoard(currentOrganization.id);
       } catch (err) {
         if (!cancelled) setError(errorMessage(err, "Unable to load this project"));
       } finally {
@@ -105,7 +106,10 @@ export function ProjectPage() {
       .catch((err) => setError(errorMessage(err, "Unable to filter issues")));
   }, [filterLabel, projectId, loading]);
 
-  const usersById = useMemo(() => Object.fromEntries(users.map((item) => [item.id, item])), [users]);
+  const usersById = useMemo(
+    () => Object.fromEntries(users.map((item) => [item.user_id, item])),
+    [users],
+  );
   const canManage = organization?.role === "owner" || organization?.role === "admin";
 
   const openIssue = async (issue: Issue) => {
@@ -147,7 +151,9 @@ export function ProjectPage() {
     setEditStatus(fresh.status);
     setEditPriority(fresh.priority);
     setEditAssignee(fresh.assignee_id ?? "");
-    await loadBoard(filterLabel);
+    if (organization) {
+      await loadBoard(organization.id, filterLabel);
+    }
   };
 
   const submitIssue = async (event: FormEvent) => {
@@ -166,7 +172,9 @@ export function ProjectPage() {
       setIssuePriority("medium");
       setIssueAssignee("");
       setCreateIssueOpen(false);
-      await loadBoard(filterLabel);
+      if (organization) {
+        await loadBoard(organization.id, filterLabel);
+      }
     } catch (err) {
       setError(errorMessage(err, "Unable to create issue"));
     } finally {
@@ -233,7 +241,9 @@ export function ProjectPage() {
       if (assigned) await api.removeLabel(projectId, selectedIssue.number, label.id);
       else await api.assignLabel(projectId, selectedIssue.number, label.id);
       setSelectedLabels(await api.issueLabels(projectId, selectedIssue.number));
-      await loadBoard(filterLabel);
+      if (organization) {
+        await loadBoard(organization.id, filterLabel);
+      }
     } catch (err) {
       setError(errorMessage(err, "Unable to change issue labels"));
     }
@@ -293,7 +303,7 @@ export function ProjectPage() {
         <form className="stack-form" onSubmit={submitIssue}>
           <label className="field"><span>Title</span><input value={issueTitle} onChange={(event) => setIssueTitle(event.target.value)} required maxLength={200} placeholder="Add API pagination" /></label>
           <label className="field"><span>Description <em>optional</em></span><textarea value={issueDescription} onChange={(event) => setIssueDescription(event.target.value)} rows={5} placeholder="Describe the expected outcome…" /></label>
-          <div className="field-row"><label className="field"><span>Priority</span><select value={issuePriority} onChange={(event) => setIssuePriority(event.target.value as IssuePriority)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label><label className="field"><span>Assignee</span><select value={issueAssignee} onChange={(event) => setIssueAssignee(event.target.value)}><option value="">Unassigned</option>{users.map((item) => <option key={item.id} value={item.id}>{item.full_name}</option>)}</select></label></div>
+          <div className="field-row"><label className="field"><span>Priority</span><select value={issuePriority} onChange={(event) => setIssuePriority(event.target.value as IssuePriority)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label><label className="field"><span>Assignee</span><select value={issueAssignee} onChange={(event) => setIssueAssignee(event.target.value)}><option value="">Unassigned</option>{users.map((item) => <option key={item.user_id} value={item.user_id}>{item.full_name}</option>)}</select></label></div>
           <div className="form-actions"><button className="button secondary" type="button" onClick={() => setCreateIssueOpen(false)}>Cancel</button><button className="button primary" disabled={submitting} type="submit">{submitting ? "Creating…" : "Create issue"}</button></div>
         </form>
       </Modal>
@@ -316,7 +326,7 @@ export function ProjectPage() {
               <div className="detail-section"><div className="section-heading"><div><h3>Comments</h3><p>{comments.length} conversation item{comments.length === 1 ? "" : "s"}</p></div></div><div className="comment-list">{comments.map((comment) => { const author = usersById[comment.author_id]; return <article className="comment" key={comment.id}><div className="mini-avatar">{initials(author?.full_name ?? "User")}</div><div><header><strong>{author?.full_name ?? "User"}</strong><span>{formatDate(comment.created_at)}</span></header><p>{comment.body}</p></div></article>; })}{comments.length === 0 ? <p className="muted">No comments yet.</p> : null}</div><form className="comment-form" onSubmit={addComment}><textarea rows={3} value={commentBody} onChange={(event) => setCommentBody(event.target.value)} placeholder="Add a comment…" required /><button className="button primary small" disabled={submitting || !commentBody.trim()} type="submit">Comment</button></form></div>
             </div>
             <aside className="issue-detail-side">
-              <div className="side-block"><h3>Properties</h3><label className="field compact"><span>Status</span><select value={editStatus} onChange={(event) => setEditStatus(event.target.value as IssueStatus)}><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="done">Done</option></select></label><label className="field compact"><span>Priority</span><select value={editPriority} onChange={(event) => setEditPriority(event.target.value as IssuePriority)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label><label className="field compact"><span>Assignee</span><select value={editAssignee} onChange={(event) => setEditAssignee(event.target.value)}><option value="">Unassigned</option>{users.map((item) => <option key={item.id} value={item.id}>{item.full_name}{item.id === user?.id ? " (you)" : ""}</option>)}</select></label><button className="button primary full" disabled={submitting || !editTitle.trim()} onClick={() => void saveIssue()} type="button">{submitting ? "Saving…" : "Save changes"}</button></div>
+              <div className="side-block"><h3>Properties</h3><label className="field compact"><span>Status</span><select value={editStatus} onChange={(event) => setEditStatus(event.target.value as IssueStatus)}><option value="todo">Todo</option><option value="in_progress">In progress</option><option value="done">Done</option></select></label><label className="field compact"><span>Priority</span><select value={editPriority} onChange={(event) => setEditPriority(event.target.value as IssuePriority)}><option value="low">Low</option><option value="medium">Medium</option><option value="high">High</option></select></label><label className="field compact"><span>Assignee</span><select value={editAssignee} onChange={(event) => setEditAssignee(event.target.value)}><option value="">Unassigned</option>{users.map((item) => <option key={item.user_id} value={item.user_id}>{item.full_name}{item.user_id === user?.id ? " (you)" : ""}</option>)}</select></label><button className="button primary full" disabled={submitting || !editTitle.trim()} onClick={() => void saveIssue()} type="button">{submitting ? "Saving…" : "Save changes"}</button></div>
               <div className="side-block"><div className="section-heading"><div><h3>Labels</h3><p>Click to toggle</p></div></div><div className="label-picker">{labels.map((label) => { const assigned = selectedLabels.some((item) => item.id === label.id); return <button type="button" className={`label-chip${assigned ? " selected" : ""}`} key={label.id} onClick={() => void toggleLabel(label)}><span style={{ backgroundColor: label.color ?? "#98a2b3" }} />{label.name}{assigned ? " ✓" : ""}</button>; })}{labels.length === 0 ? <p className="muted">No project labels.</p> : null}</div></div>
               <div className="side-block metadata"><h3>Details</h3><dl><div><dt>Reporter</dt><dd>{usersById[selectedIssue.reporter_id]?.full_name ?? "Unknown"}</dd></div><div><dt>Created</dt><dd>{formatDate(selectedIssue.created_at)}</dd></div><div><dt>Updated</dt><dd>{formatDate(selectedIssue.updated_at)}</dd></div></dl></div>
             </aside>

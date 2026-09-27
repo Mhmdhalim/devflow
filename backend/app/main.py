@@ -8,6 +8,7 @@ from app.api.routes.health import router as health_router
 from app.api.routes.issue_labels import router as issue_labels_router
 from app.api.routes.issues import router as issues_router
 from app.api.routes.labels import router as labels_router
+from app.api.routes.organization_access import router as organization_access_router
 from app.api.routes.organizations import (
     router as organizations_router,
 )
@@ -35,6 +36,7 @@ app.include_router(health_router)
 app.include_router(users_router)
 app.include_router(auth_router)
 app.include_router(organizations_router)
+app.include_router(organization_access_router)
 app.include_router(projects_router)
 app.include_router(issues_router)
 app.include_router(comments_router)

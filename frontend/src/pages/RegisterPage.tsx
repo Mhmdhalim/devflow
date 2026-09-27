@@ -1,5 +1,5 @@
 import { type FormEvent, useState } from "react";
-import { Link, Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { ApiError } from "../api/client";
 import { ErrorMessage } from "../components/StatusMessage";
 import { useAuth } from "../context/AuthContext";
@@ -7,13 +7,15 @@ import { useAuth } from "../context/AuthContext";
 export function RegisterPage() {
   const { user, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const from = (location.state as { from?: string } | null)?.from ?? "/";
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  if (user) return <Navigate to={from} replace />;
 
   const submit = async (event: FormEvent) => {
     event.preventDefault();
@@ -21,7 +23,7 @@ export function RegisterPage() {
     setSubmitting(true);
     try {
       await register(fullName.trim(), email.trim(), password);
-      navigate("/", { replace: true });
+      navigate(from, { replace: true });
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Unable to create account");
     } finally {
@@ -72,7 +74,10 @@ export function RegisterPage() {
           <button className="button primary full" disabled={submitting} type="submit">
             {submitting ? "Creating account…" : "Create account"}
           </button>
-          <p className="auth-switch">Already registered? <Link to="/login">Sign in</Link></p>
+          <p className="auth-switch">
+            Already registered?{" "}
+            <Link to="/login" state={{ from }}>Sign in</Link>
+          </p>
         </form>
       </section>
     </div>

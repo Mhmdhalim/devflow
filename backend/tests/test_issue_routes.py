@@ -10,6 +10,7 @@ from app.main import app
 from app.models.issue import Issue
 from app.models.user import User
 from app.services.issue import (
+    IssueAssigneeNotMemberError,
     IssueNotFoundError,
     IssuePermissionDeniedError,
     IssueProjectNotFoundError,
@@ -547,3 +548,29 @@ def test_list_issues_rejects_invalid_label_id() -> None:
     app.dependency_overrides.clear()
 
     assert response.status_code == 422
+
+
+def test_create_issue_rejects_non_member_assignee() -> None:
+    service = MagicMock()
+    user = make_user()
+    project_id = uuid.uuid4()
+
+    service.create_issue.side_effect = IssueAssigneeNotMemberError
+
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_issue_service] = lambda: service
+
+    response = client.post(
+        f"/projects/{project_id}/issues",
+        json={
+            "title": "Assign work",
+            "assignee_id": str(uuid.uuid4()),
+        },
+    )
+
+    app.dependency_overrides.clear()
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == (
+        "Assignee must be a member of the project organization"
+    )
