@@ -159,11 +159,26 @@ test("organization invitation works end to end", async ({ page, browser, baseURL
   await outsiderPage.getByRole("button", { name: "Create account" }).click();
 
   await expect(outsiderPage.getByRole("heading", { name: workspaceName })).toHaveCount(0);
+  const outsiderToken = await outsiderPage.evaluate(() =>
+    window.localStorage.getItem("devflow_access_token"),
+  );
+  expect(outsiderToken).toBeTruthy();
+
+  const projectId = projectHref!.split("/").filter(Boolean).at(-1);
+  expect(projectId).toBeTruthy();
+
+  const forbiddenResponse = await outsiderPage.request.get(
+    new URL(`/api/projects/${projectId}/issues`, baseURL!).toString(),
+    {
+      headers: {
+        Authorization: `Bearer ${outsiderToken}`,
+      },
+    },
+  );
+  expect(forbiddenResponse.status()).toBe(403);
+
   await outsiderPage.goto(projectHref!);
   await expect(outsiderPage.getByRole("heading", { name: projectName })).toHaveCount(0);
-  await expect(
-    outsiderPage.getByText("Project not found in your accessible organizations"),
-  ).toBeVisible();
   await expect(outsiderPage.getByRole("link", { name: "Back to workspaces" })).toBeVisible();
 
   await outsiderContext.close();
