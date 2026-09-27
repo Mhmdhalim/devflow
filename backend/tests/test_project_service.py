@@ -223,3 +223,54 @@ def test_create_project_when_user_is_regular_member() -> None:
 
     project_repository.get_by_key.assert_not_called()
     project_repository.create.assert_not_called()
+
+
+def test_create_project_when_user_is_admin() -> None:
+    project_repository = MagicMock()
+    organization_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = ProjectService(
+        project_repository,
+        organization_repository,
+        membership_repository,
+    )
+
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    data = make_data()
+
+    organization_repository.get_by_id.return_value = Organization(
+        name="DevFlow",
+        slug="devflow",
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="admin",
+    )
+
+    project_repository.get_by_key.return_value = None
+
+    expected_project = Project(
+        organization_id=organization_id,
+        name=data.name,
+        key=data.key,
+        description=data.description,
+    )
+
+    project_repository.create.return_value = expected_project
+
+    result = service.create_project(
+        data,
+        organization_id,
+        user_id,
+    )
+
+    assert result is expected_project
+
+    project_repository.create.assert_called_once_with(
+        data=data,
+        organization_id=organization_id,
+    )
