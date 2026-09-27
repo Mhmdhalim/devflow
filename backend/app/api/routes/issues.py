@@ -84,13 +84,21 @@ def list_issues(
         User,
         Depends(get_current_user),
     ],
+    label_id: uuid.UUID | None = None,
     service: IssueService = Depends(get_issue_service),
 ) -> list[IssueRead]:
     try:
-        issues = service.list_issues(
-            project_id=project_id,
-            user_id=current_user.id,
-        )
+        if label_id is None:
+            issues = service.list_issues(
+                project_id=project_id,
+                user_id=current_user.id,
+            )
+        else:
+            issues = service.list_issues(
+                project_id=project_id,
+                user_id=current_user.id,
+                label_id=label_id,
+            )
 
     except IssueProjectNotFoundError as exc:
         raise HTTPException(

@@ -239,3 +239,35 @@ def test_update_issue_can_clear_nullable_fields() -> None:
 
     assert issue.description is None
     assert issue.assignee_id is None
+
+
+def test_list_for_project_with_label() -> None:
+    db = MagicMock()
+    repository = IssueRepository(db)
+
+    project_id = uuid.uuid4()
+    label_id = uuid.uuid4()
+    reporter_id = uuid.uuid4()
+
+    issues = [
+        Issue(
+            project_id=project_id,
+            number=2,
+            title="Backend issue",
+            description=None,
+            status="todo",
+            priority="high",
+            reporter_id=reporter_id,
+            assignee_id=None,
+        ),
+    ]
+
+    db.scalars.return_value.all.return_value = issues
+
+    result = repository.list_for_project(
+        project_id=project_id,
+        label_id=label_id,
+    )
+
+    assert result == issues
+    db.scalars.assert_called_once()

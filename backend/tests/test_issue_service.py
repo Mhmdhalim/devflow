@@ -527,3 +527,61 @@ def test_update_issue_when_user_is_not_member() -> None:
 
     issue_repository.get_by_number.assert_not_called()
     issue_repository.update.assert_not_called()
+
+
+def test_list_issues_with_label() -> None:
+    issue_repository = MagicMock()
+    project_repository = MagicMock()
+    membership_repository = MagicMock()
+
+    service = IssueService(
+        issue_repository,
+        project_repository,
+        membership_repository,
+    )
+
+    project_id = uuid.uuid4()
+    organization_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    label_id = uuid.uuid4()
+
+    project_repository.get_by_id.return_value = Project(
+        organization_id=organization_id,
+        name="Backend",
+        key="DEV",
+        description=None,
+    )
+
+    membership_repository.get_for_user_and_organization.return_value = Membership(
+        user_id=user_id,
+        organization_id=organization_id,
+        role="member",
+    )
+
+    expected_issues = [
+        Issue(
+            project_id=project_id,
+            number=2,
+            title="Backend issue",
+            description=None,
+            status="todo",
+            priority="high",
+            reporter_id=user_id,
+            assignee_id=None,
+        ),
+    ]
+
+    issue_repository.list_for_project.return_value = expected_issues
+
+    result = service.list_issues(
+        project_id=project_id,
+        user_id=user_id,
+        label_id=label_id,
+    )
+
+    assert result == expected_issues
+
+    issue_repository.list_for_project.assert_called_once_with(
+        project_id=project_id,
+        label_id=label_id,
+    )

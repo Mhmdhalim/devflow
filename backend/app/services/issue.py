@@ -75,13 +75,20 @@ class IssueService:
         self,
         project_id: uuid.UUID,
         user_id: uuid.UUID,
+        label_id: uuid.UUID | None = None,
     ) -> list[Issue]:
         self._get_project_for_member(
             project_id=project_id,
             user_id=user_id,
         )
 
-        return self.issue_repository.list_for_project(project_id)
+        if label_id is None:
+            return self.issue_repository.list_for_project(project_id)
+
+        return self.issue_repository.list_for_project(
+            project_id=project_id,
+            label_id=label_id,
+        )
 
     def get_issue(
         self,
