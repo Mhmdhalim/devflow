@@ -77,3 +77,71 @@ test("full DevFlow workflow works end to end", async ({ page }) => {
   await page.getByLabel("Filter by label").selectOption({ label: labelName });
   await expect(page.getByText(issueTitle)).toBeVisible();
 });
+
+
+test("organization invitation works end to end", async ({ page, browser, baseURL }) => {
+  const runId = Date.now().toString();
+  const ownerEmail = `owner+${runId}@example.com`;
+  const memberEmail = `member+${runId}@example.com`;
+  const workspaceName = `Invite Workspace ${runId}`;
+  const workspaceSlug = `invite-workspace-${runId}`;
+  const projectName = `Shared Project ${runId}`;
+  const projectKey = `SHR${runId.slice(-6)}`;
+
+  await page.goto("/register");
+  await page.getByLabel("Full name").fill("Invitation Owner");
+  await page.getByLabel("Email address").fill(ownerEmail);
+  await page.getByLabel("Password").fill("password123");
+  await page.getByRole("button", { name: "Create account" }).click();
+
+  await page.getByRole("button", { name: "+ New workspace" }).click();
+  const workspaceDialog = page.getByRole("dialog", { name: "New workspace" });
+  await workspaceDialog.getByLabel("Name").fill(workspaceName);
+  await workspaceDialog.getByLabel("Slug").fill(workspaceSlug);
+  await workspaceDialog.getByRole("button", { name: "Create workspace" }).click();
+
+  await page.getByRole("button", { name: "+ Project" }).click();
+  const projectDialog = page.getByRole("dialog", { name: "New project" });
+  await projectDialog.getByLabel("Project name").fill(projectName);
+  await projectDialog.getByLabel("Key").fill(projectKey);
+  await projectDialog.getByRole("button", { name: "Create project" }).click();
+
+  await page.getByRole("link", { name: "Members" }).click();
+  await page.getByLabel("Email address").fill(memberEmail);
+  await page.getByLabel("Role").selectOption("member");
+  await page.getByRole("button", { name: "Create invite" }).click();
+
+  const inviteUrl = await page.locator(".invite-link-row input").inputValue();
+  expect(inviteUrl).toContain("/invitations/");
+
+  const memberContext = await browser.newContext({ baseURL });
+  const memberPage = await memberContext.newPage();
+
+  await memberPage.goto(inviteUrl);
+  await expect(
+    memberPage.getByRole("heading", { name: "Sign in to DevFlow" }),
+  ).toBeVisible();
+
+  await memberPage.getByRole("link", { name: "Create an account" }).click();
+  await memberPage.getByLabel("Full name").fill("Invited Member");
+  await memberPage.getByLabel("Email address").fill(memberEmail);
+  await memberPage.getByLabel("Password").fill("password123");
+  await memberPage.getByRole("button", { name: "Create account" }).click();
+
+  await expect(
+    memberPage.getByRole("heading", { name: "Workspace invitation" }),
+  ).toBeVisible();
+  await expect(memberPage.getByRole("heading", { name: workspaceName })).toBeVisible();
+  await memberPage.getByRole("button", { name: "Accept invitation" }).click();
+
+  await expect(memberPage.getByRole("heading", { name: "Workspaces" })).toBeVisible();
+  await expect(memberPage.getByRole("heading", { name: workspaceName })).toBeVisible();
+  await expect(
+    memberPage.getByRole("link", { name: new RegExp(projectName) }),
+  ).toBeVisible();
+
+  await page.reload();
+  await expect(page.getByText(memberEmail)).toBeVisible();
+
+  await memberContext.close();
+});
