@@ -18,6 +18,8 @@ IssueStatus = Literal[
 
 
 class IssueCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     title: str = Field(
         min_length=1,
         max_length=200,
@@ -31,6 +33,8 @@ class IssueCreate(BaseModel):
 
 
 class IssueUpdate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     title: str | None = Field(
         default=None,
         min_length=1,
