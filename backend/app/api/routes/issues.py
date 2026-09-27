@@ -72,6 +72,12 @@ def create_issue(
             detail="You do not have access to this project",
         ) from exc
 
+    except IssueAssigneeNotMemberError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Assignee must be a member of the project organization",
+        ) from exc
+
     return IssueRead.model_validate(issue)
 
 
@@ -152,12 +158,6 @@ def get_issue(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Issue not found",
-        ) from exc
-
-    except IssueAssigneeNotMemberError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Assignee must be a member of the project organization",
         ) from exc
 
     return IssueRead.model_validate(issue)
